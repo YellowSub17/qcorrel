@@ -1,9 +1,4 @@
 import numpy as np
-import spglib
-
-
-
-
 
 HM_NUMBER_DICT = {
     'P 1': 1,
@@ -15,95 +10,491 @@ HM_NUMBER_DICT = {
 }
 
 
-def four_over_m(h,k,l):
+def identity():
+    return np.eye(3, 3)
+
+def two_over_m():
+    # Number of equivalent points
+    multiplicity = 4
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
 
 
-    multiplicity = 8
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[2, ...] = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #2 fold rot on y
+    total_sym_mat[5, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
 
-    total_sym_mat = np.zeros( (multiplicity,3, 3) )
+    ops_ind = 3
 
-
-    total_sym_mat[0,...] = np.array([[1,0,0], [0,1,0], [0,0,1]])
-    total_sym_mat[1,...] = np.array([[-1,0,0], [0,-1,0], [0,0,1]])
-    total_sym_mat[2,...] = np.array([[0,-1,0], [1,0,0], [0,0,1]])
-    total_sym_mat[3,...] = np.array([[-1,0,0], [0,-1,0], [0,0,-1]])
-
-
+    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
+    while ops_ind < multiplicity:
 
 
-    ops_ind = 4
-
-    while np.array_equal(total_sym_mat[-1,...], np.zeros((3,3))):
-
+        #loop through and get two operations
         for i in range(ops_ind):
             for j in range(ops_ind):
-                new_sym_mat = np.matmul(total_sym_mat[i,...], total_sym_mat[j,...])
 
+                #multiply the operations
+                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
 
-                is_new_sym=True
+                # Assume this is a new operation
+                is_new_sym = True
 
-                for sym_mat in total_sym_mat[:ops_ind,...]:
+                # loop through the syms ops that we have found
+                for sym_mat in total_sym_mat[:ops_ind, ...]:
 
+                    #check if we have already found this sym op
                     if np.array_equal(sym_mat, new_sym_mat):
-                        is_new_sym=False
+                        #if we have, stop seaching for through the others and comparing them
+                        is_new_sym = False
                         break
 
+                #if the newly calculated operation is unlike the others we previously found
                 if is_new_sym:
-
-                    total_sym_mat[ops_ind,...] = new_sym_mat
-                    ops_ind +=1
-
+                    #insert it into the total sym operations matrix
+                    total_sym_mat[ops_ind, ...] = new_sym_mat
+                    #increment the number of found operations for the while loop
+                    ops_ind += 1
 
     return total_sym_mat
 
-#
-# def apply_sym(reflections, spg_code):
-#
-#
-#     # Look up the space group number of the cell
-#     HM_number = HM_NUMBER_DICT[spg_code]
-#
-#     # get the point space gorup (laue group)
-#
-#
-#     if HM_number ==1 or HM_number ==2:
-#         return mmm(reflections)
-#
-#     elif laue_code =='C1' or laue_code == 'Ci':
-#         return identity(reflections)
-#
-#     elif laue_code =='T' or laue_code =='Th':
-#         return m3(reflections)
-#
-#     elif laue_code=='O' or laue_code=='Td' or laue_code=='Oh':
-#         return m3m(reflections)
-#
-#
-#     else:
-#         print('WARNING: NO SYMETERY APPLIED')
-#         print(f'spg: {spg_code}, pg: {laue_code}')
-#         return identity(reflections)
-#
-#
-#
+def mmm():
+    # Number of equivalent points
+    multiplicity = 8
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
 
 
-ans = four_over_m(1,1,1)
-print(*ans, sep='\n\n')
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[1, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])  # 2 fold rot on z
+    total_sym_mat[2, ...] = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #2 fold rot on y
+    total_sym_mat[3, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
 
-#
-#
-# test_hkl = np.random.random((100,4))
-# test_hkl[0,:3] = [1,1,3]
-# test_hkl[:, :3] *= 10
-# test_hkl[:, :3] = np.round(test_hkl[:, :3])
-# test_hkl[:,3] *= 100
-#
-#
-#
+    ops_ind = 4
+
+    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
+    while ops_ind < multiplicity:
 
 
+        #loop through and get two operations
+        for i in range(ops_ind):
+            for j in range(ops_ind):
 
+                #multiply the operations
+                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
+
+                # Assume this is a new operation
+                is_new_sym = True
+
+                # loop through the syms ops that we have found
+                for sym_mat in total_sym_mat[:ops_ind, ...]:
+
+                    #check if we have already found this sym op
+                    if np.array_equal(sym_mat, new_sym_mat):
+                        #if we have, stop seaching for through the others and comparing them
+                        is_new_sym = False
+                        break
+
+                #if the newly calculated operation is unlike the others we previously found
+                if is_new_sym:
+                    #insert it into the total sym operations matrix
+                    total_sym_mat[ops_ind, ...] = new_sym_mat
+                    #increment the number of found operations for the while loop
+                    ops_ind += 1
+
+    return total_sym_mat
+
+def four_over_m():
+    # Number of equivalent points
+    multiplicity = 8
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
+
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[1, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])  # 2 fold rot on z
+    total_sym_mat[2, ...] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])  # 4 fold rot on z
+    total_sym_mat[3, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
+
+
+    #number of operations that have been filld
+    ops_ind = 4
+
+
+    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
+    while ops_ind < multiplicity:
+
+
+        #loop through and get two operations
+        for i in range(ops_ind):
+            for j in range(ops_ind):
+
+                #multiply the operations
+                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
+
+                # Assume this is a new operation
+                is_new_sym = True
+
+                # loop through the syms ops that we have found
+                for sym_mat in total_sym_mat[:ops_ind, ...]:
+
+                    #check if we have already found this sym op
+                    if np.array_equal(sym_mat, new_sym_mat):
+                        #if we have, stop seaching for through the others and comparing them
+                        is_new_sym = False
+                        break
+
+                #if the newly calculated operation is unlike the others we previously found
+                if is_new_sym:
+                    #insert it into the total sym operations matrix
+                    total_sym_mat[ops_ind, ...] = new_sym_mat
+                    #increment the number of found operations for the while loop
+                    ops_ind += 1
+
+    return total_sym_mat
+
+def four_over_mmm():
+    # Number of equivalent points
+    multiplicity = 16
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
+
+
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[1, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])  # 2 fold rot on z
+    total_sym_mat[2, ...] = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #2 fold rot on y
+    total_sym_mat[3, ...] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])  # 4 fold rot on z
+    total_sym_mat[4, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
+
+    ops_ind = 5
+
+    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
+    while ops_ind < multiplicity:
+
+
+        #loop through and get two operations
+        for i in range(ops_ind):
+            for j in range(ops_ind):
+
+                #multiply the operations
+                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
+
+                # Assume this is a new operation
+                is_new_sym = True
+
+                # loop through the syms ops that we have found
+                for sym_mat in total_sym_mat[:ops_ind, ...]:
+
+                    #check if we have already found this sym op
+                    if np.array_equal(sym_mat, new_sym_mat):
+                        #if we have, stop seaching for through the others and comparing them
+                        is_new_sym = False
+                        break
+
+                #if the newly calculated operation is unlike the others we previously found
+                if is_new_sym:
+                    #insert it into the total sym operations matrix
+                    total_sym_mat[ops_ind, ...] = new_sym_mat
+                    #increment the number of found operations for the while loop
+                    ops_ind += 1
+
+    return total_sym_mat
+
+def three_bar():
+    # Number of equivalent points
+    multiplicity = 6
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
+
+
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[1, ...] = np.array([[0, -1, 0], [1, -1, 0], [0, 0, 1]])  #  3 fold rot on z
+    total_sym_mat[2, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
+
+    ops_ind = 3
+
+    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
+    while ops_ind < multiplicity:
+
+
+        #loop through and get two operations
+        for i in range(ops_ind):
+            for j in range(ops_ind):
+
+                #multiply the operations
+                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
+
+                # Assume this is a new operation
+                is_new_sym = True
+
+                # loop through the syms ops that we have found
+                for sym_mat in total_sym_mat[:ops_ind, ...]:
+
+                    #check if we have already found this sym op
+                    if np.array_equal(sym_mat, new_sym_mat):
+                        #if we have, stop seaching for through the others and comparing them
+                        is_new_sym = False
+                        break
+
+                #if the newly calculated operation is unlike the others we previously found
+                if is_new_sym:
+                    #insert it into the total sym operations matrix
+                    total_sym_mat[ops_ind, ...] = new_sym_mat
+                    #increment the number of found operations for the while loop
+                    ops_ind += 1
+
+    return total_sym_mat
+
+def three_bar_two_m():
+    print('Plz fix three_bar_two_m function in symmetry')
+
+def six_over_m():
+    # Number of equivalent points
+    multiplicity = 12
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
+
+
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[1, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])  # 2 fold rot on z
+    total_sym_mat[2, ...] = np.array([[0, -1, 0], [1, -1, 0], [0, 0, 1]])  #  3 fold rot on z
+    total_sym_mat[3, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
+
+    ops_ind = 4
+
+    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
+    while ops_ind < multiplicity:
+
+
+        #loop through and get two operations
+        for i in range(ops_ind):
+            for j in range(ops_ind):
+
+                #multiply the operations
+                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
+
+                # Assume this is a new operation
+                is_new_sym = True
+
+                # loop through the syms ops that we have found
+                for sym_mat in total_sym_mat[:ops_ind, ...]:
+
+                    #check if we have already found this sym op
+                    if np.array_equal(sym_mat, new_sym_mat):
+                        #if we have, stop seaching for through the others and comparing them
+                        is_new_sym = False
+                        break
+
+                #if the newly calculated operation is unlike the others we previously found
+                if is_new_sym:
+                    #insert it into the total sym operations matrix
+                    total_sym_mat[ops_ind, ...] = new_sym_mat
+                    #increment the number of found operations for the while loop
+                    ops_ind += 1
+
+    return total_sym_mat
+
+def six_over_mmm():
+    # Number of equivalent points
+    multiplicity = 24
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
+
+
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[1, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])  # 2 fold rot on z
+    total_sym_mat[2, ...] = np.array([[0, -1, 0], [1, -1, 0], [0, 0, 1]])  #  3 fold rot on z
+    total_sym_mat[3, ...] = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])    #2 fold rot on (1,1,0)
+    total_sym_mat[4, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
+
+    ops_ind = 5
+
+    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
+    while ops_ind < multiplicity:
+
+
+        #loop through and get two operations
+        for i in range(ops_ind):
+            for j in range(ops_ind):
+
+                #multiply the operations
+                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
+
+                # Assume this is a new operation
+                is_new_sym = True
+
+                # loop through the syms ops that we have found
+                for sym_mat in total_sym_mat[:ops_ind, ...]:
+
+                    #check if we have already found this sym op
+                    if np.array_equal(sym_mat, new_sym_mat):
+                        #if we have, stop seaching for through the others and comparing them
+                        is_new_sym = False
+                        break
+
+                #if the newly calculated operation is unlike the others we previously found
+                if is_new_sym:
+                    #insert it into the total sym operations matrix
+                    total_sym_mat[ops_ind, ...] = new_sym_mat
+                    #increment the number of found operations for the while loop
+                    ops_ind += 1
+
+    return total_sym_mat
+
+def m_three():
+    # Number of equivalent points
+    multiplicity = 24
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
+
+
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[1, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])  # 2 fold rot on z
+    total_sym_mat[2, ...] = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #2 fold rot on y
+    total_sym_mat[3, ...] = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])     # 3 fold rot on (1,1,1)
+    total_sym_mat[4, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
+
+    ops_ind = 5
+
+    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
+    while ops_ind < multiplicity:
+
+
+        #loop through and get two operations
+        for i in range(ops_ind):
+            for j in range(ops_ind):
+
+                #multiply the operations
+                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
+
+                # Assume this is a new operation
+                is_new_sym = True
+
+                # loop through the syms ops that we have found
+                for sym_mat in total_sym_mat[:ops_ind, ...]:
+
+                    #check if we have already found this sym op
+                    if np.array_equal(sym_mat, new_sym_mat):
+                        #if we have, stop seaching for through the others and comparing them
+                        is_new_sym = False
+                        break
+
+                #if the newly calculated operation is unlike the others we previously found
+                if is_new_sym:
+                    #insert it into the total sym operations matrix
+                    total_sym_mat[ops_ind, ...] = new_sym_mat
+                    #increment the number of found operations for the while loop
+                    ops_ind += 1
+
+    return total_sym_mat
+
+def m_three_m():
+    # Number of equivalent points
+    multiplicity = 48
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
+
+
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[1, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])  # 2 fold rot on z
+    total_sym_mat[2, ...] = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #2 fold rot on y
+    total_sym_mat[3, ...] = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])     # 3 fold rot on (1,1,1)
+    total_sym_mat[4, ...] = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])    #2 fold rot on (1,1,0)
+    total_sym_mat[5, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
+
+    ops_ind = 6
+
+    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
+    while ops_ind < multiplicity:
+
+
+        #loop through and get two operations
+        for i in range(ops_ind):
+            for j in range(ops_ind):
+
+                #multiply the operations
+                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
+
+                # Assume this is a new operation
+                is_new_sym = True
+
+                # loop through the syms ops that we have found
+                for sym_mat in total_sym_mat[:ops_ind, ...]:
+
+                    #check if we have already found this sym op
+                    if np.array_equal(sym_mat, new_sym_mat):
+                        #if we have, stop seaching for through the others and comparing them
+                        is_new_sym = False
+                        break
+
+                #if the newly calculated operation is unlike the others we previously found
+                if is_new_sym:
+                    #insert it into the total sym operations matrix
+                    total_sym_mat[ops_ind, ...] = new_sym_mat
+                    #increment the number of found operations for the while loop
+                    ops_ind += 1
+
+    return total_sym_mat
+
+
+def apply_sym(reflections, spg_code):
+    # Look up the space group number of the cell
+    HM_number = HM_NUMBER_DICT[spg_code]
+
+    if HM_number == 1 or HM_number == 2:
+        sym_mat = identity()
+
+    elif HM_number >= 3 and HM_number <= 107:
+        sym_mat = two_over_m()
+
+    elif HM_number >= 108 and HM_number <= 348:
+        sym_mat = mmm()
+
+    elif HM_number >= 349 and HM_number <= 365:
+        sym_mat = four_over_m()
+
+    elif HM_number >= 366 and HM_number <= 429:
+        sym_mat = four_over_mmm()
+
+    elif HM_number >= 430 and HM_number <= 437:
+        sym_mat = three_bar()
+
+    elif HM_number >= 438 and HM_number <= 461:
+        sym_mat = three_bar_two_m()
+
+    elif HM_number >= 462 and HM_number <= 470:
+        sym_mat = six_over_m()
+
+    elif HM_number >= 471 and HM_number <= 488:
+        sym_mat = six_over_mmm()
+
+    elif HM_number >= 489 and HM_number <= 502:
+        sym_mat = m_three()
+
+    elif HM_number >= 503 and HM_number <= 530:
+        sym_mat = m_three_m()
+
+    else:
+        print('WARNING: NO SYMETERY APPLIED')
+        print(f'spg: {spg_code}, pg: {HM_number}')
+        sym_mat = identity()
 
 
 
