@@ -13,6 +13,7 @@ def calc_q(h, k, l, ast, bst, cst):
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
+    # print(vector, np.linalg.norm(vector))
     return vector / np.linalg.norm(vector)
 
 def angle_between(v1, v2):
@@ -64,7 +65,11 @@ def get_cif_reflections(cif):
     reflections = sym.apply_sym(reflections, cif[cif.visible_keys[0]]['_symmetry.space_group_name_H-M'])
 
 
-    reflections=reflections[~np.all(reflections == 0, axis=1)]
+    # reflections=reflections[~np.all(hkl == 0, axis=1)]
+    #
+
+    #removes the hkl=000
+    # reflections = np.where(np.all(reflections[...,:3]==0, axis=1))
 
     return reflections
 
@@ -82,9 +87,9 @@ def calc_cif_qs(cif):
     qs = np.zeros((reflections.shape[0], 7), dtype=np.float64)
 
     # get cell paraments to make a,b,c
-    a_len = float(sf_cif[cif.visible_keys[0]]['_cell.length_a']) * np.array([1, 0, 0], dtype=np.float64)
-    b_len = float(sf_cif[cif.visible_keys[0]]['_cell.length_b']) * np.array([0, 1, 0], dtype=np.float64)
-    c_len = float(sf_cif[cif.visible_keys[0]]['_cell.length_c']) * np.array([0, 0, 1], dtype=np.float64)
+    a_len = float(cif[cif.visible_keys[0]]['_cell.length_a']) * np.array([1, 0, 0], dtype=np.float64)
+    b_len = float(cif[cif.visible_keys[0]]['_cell.length_b']) * np.array([0, 1, 0], dtype=np.float64)
+    c_len = float(cif[cif.visible_keys[0]]['_cell.length_c']) * np.array([0, 0, 1], dtype=np.float64)
 
     # calculate a*, b*, c*
     ast_len = np.cross(b_len, c_len) / np.dot(a_len, np.cross(b_len, c_len))
@@ -104,100 +109,6 @@ def calc_cif_qs(cif):
     return qs
 
 
-def correlate1(cif, dQ_shell, dQ, dTheta, hist=True, out_q_max=False):
-
-    '''
-    given a cif file, get an array of q vectors from the reflections, ordered from lowest |q| to highest
-    find the correlation shells of thickness dQ_shell for each vector
-    correlate each vector with the vectors within it's shell, and map it to a correlation map interpolated to
-    have pixels dQ by dTheta
-    '''
-    # get a list of sorted q vectors in the cif file
-    qs_sort = calc_cif_qs(cif)
-    print(f'Max q magnitude: {qs_sort[-1, 3]}')
-
-    # number of angle and q indices
-    nTheta = int(360 / dTheta)
-    nQ = int(qs_sort[-1, 3] / dQ)
-
-    # init histogram of theta values
-    correl = np.zeros((nQ, nTheta))
-
-    # for every q vector, we want to find how many indices above and below we need to go before the difference in |q| > dQ
-    print('Finding upper and lower bounds of correlation shells')
-    for i, q in enumerate(qs_sort):
-        # init the upper and lower index values, how far above and below we look to correlate with
-        upper_ind = 0
-        lower_ind = 0
-
-        # current difference in magnitude above and below is 0
-        upper_mag = 0
-        lower_mag = 0
-
-        # continously check if the current difference in magnitude in vectors below is less then dQ
-        while abs(lower_mag) < abs(dQ_shell):
-            # if it is, then make sure that highest the lower_ind can go is the current position in the list
-            if i - lower_ind == 0:
-                break  # this avoids index errors
-            # get the current comparison q vector
-            q_prime = qs_sort[i - lower_ind]
-
-            # get the difference in magnitude between the two q vectors, this gets checked in the next loop
-            lower_mag = q[3] - q_prime[3]
-            # increment how indices that we look below in the next iteration
-            lower_ind += 1
-
-        # repeat the process, but now calculate the upper bound
-        while abs(upper_mag) < abs(dQ_shell):
-            if i + upper_ind == qs_sort.shape[0]:
-                break
-            q_prime = qs_sort[i + upper_ind]
-            upper_mag = q_prime[3] - q[3]
-
-            upper_ind += 1
-
-        # once we have the upper and lower bounds for our q shell, save these values in qs_sort
-
-        qs_sort[i, 4] = lower_ind
-        qs_sort[i, 5] = upper_ind
-
-    # for every q vector
-    for i, q in enumerate(qs_sort):
-        print(f'Correlating: {i}/{qs_sort.shape[0]} (Q vector {q})', sep='\t')
-
-        # extract the upper and lower bounds of correlation
-        q_lower_ind = int(q[4])
-        q_upper_ind = int(q[5])
-
-        # for every vector within the bounds of +/- dQ (q[4]:q[5])
-        for j, q_prime in enumerate(qs_sort[q_lower_ind:q_upper_ind]):
-
-            # calculate the angle between the vectors, and the index for theta in the corell map
-            theta = np.degrees(angle_between(q[:3], q_prime[:3]))
-            theta_ind = int((theta / 360.0) * (nTheta - 1))
-
-            # reflection about 180
-            #theta_ind2 = int(((360 - theta) / 360.0) * (nTheta - 1))
-
-            # calculate which index for q based in magnitude
-            q_ind = int((q[3] / qs_sort[-1, 3]) * (nQ - 1))
-
-            # increment the value of the histogram for this q magnitude and angle
-            if hist:
-                correl[q_ind, theta_ind] += 1
-                #correl[q_ind, theta_ind2] += 1
-            else:
-                correl[q_ind, theta_ind] += q[6] * q_prime[6]
-                #correl[q_ind, theta_ind2] += q[6] * q_prime[6]
-
-
-    if out_q_max:
-        return correl, qs_sort[-1, 3]
-    else:
-        return correl
-
-
-
 def correlate(cif, dQ, dTheta):
 
     '''
@@ -213,7 +124,7 @@ def correlate(cif, dQ, dTheta):
 
     # number of angle and q indices
     nTheta = int(360 / dTheta)
-    nQ = int(np.max(qs_sort[:, 3]) / dQ)
+    nQ = int(1.25*np.max(qs_sort[:, 3]) / dQ)
     #print(nQ)
     # init histogram of theta values
     correl = np.zeros((nQ, nTheta))
@@ -225,6 +136,8 @@ def correlate(cif, dQ, dTheta):
         iq = int(q[3]/dQ)
         if (iq>=0) and (iq < nQ):
             qs_sort[i,4] = iq
+        else:
+            print('bing', q, iq)
 
 
 
@@ -235,11 +148,13 @@ def correlate(cif, dQ, dTheta):
         if i%400== 0:
             print(f'Correlating: {i}/{qs_sort.shape[0]} (Q vector {q})', sep='\t')
 
-        # extract the upper and lower bounds of correlation
+
         iq = int(q[4])
 
-        # for every vector within the bounds of +/- dQ (q[4]:q[5])
+
         for j, q_prime in enumerate(qs_sort):
+
+
             iq_prime = int(q_prime[4])
 
             if i==j or iq != iq_prime:
@@ -248,7 +163,8 @@ def correlate(cif, dQ, dTheta):
 
             # calculate the angle between the vectors, and the index for theta in the corell map
             theta = np.degrees(angle_between(q[:3], q_prime[:3]))
-            theta_ind = int((theta / 180.0) * (nTheta - 1))
+            # print(theta)
+            theta_ind = int((theta / 360.0) * (nTheta - 1))
 
 
             # increment the value of the histogram for this q magnitude and angle
@@ -263,13 +179,11 @@ def correlate(cif, dQ, dTheta):
 
 
 
+protein_names = ['5hul']
 
+dqs = [0.01]
 
-protein_names = ['5dk8']
-
-dqs = [0.001]
-
-hkl_num = [10]
+hkl_num = [5]
 
 # Read in Cif file
 for name in protein_names:
@@ -297,8 +211,8 @@ for name in protein_names:
             plt.colorbar()
             # plt.savefig(f'saved_plots\\{name}_less{num}_logcorrel_dq{int(dq*1000)}')
             # plt.close('all')
-            
-            
+
+
             plt.figure()
             plt.title(f'{name}_less{num} hist - dq={dq}')
             plt.imshow(hist, cmap='plasma', aspect='auto')

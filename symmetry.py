@@ -459,43 +459,56 @@ def apply_sym(reflections, spg_code):
     HM_number = HM_NUMBER_DICT[spg_code]
 
     if HM_number == 1 or HM_number == 2:
-        sym_mat = identity()
+        total_sym_mat = identity()
 
     elif HM_number >= 3 and HM_number <= 107:
-        sym_mat = two_over_m()
+        total_sym_mat = two_over_m()
 
     elif HM_number >= 108 and HM_number <= 348:
-        sym_mat = mmm()
+        total_sym_mat = mmm()
 
     elif HM_number >= 349 and HM_number <= 365:
-        sym_mat = four_over_m()
+        total_sym_mat = four_over_m()
 
     elif HM_number >= 366 and HM_number <= 429:
-        sym_mat = four_over_mmm()
+        total_sym_mat = four_over_mmm()
 
     elif HM_number >= 430 and HM_number <= 437:
-        sym_mat = three_bar()
+        total_sym_mat = three_bar()
 
     elif HM_number >= 438 and HM_number <= 461:
-        sym_mat = three_bar_two_m()
+        total_sym_mat = three_bar_two_m()
 
     elif HM_number >= 462 and HM_number <= 470:
-        sym_mat = six_over_m()
+        total_sym_mat = six_over_m()
 
     elif HM_number >= 471 and HM_number <= 488:
-        sym_mat = six_over_mmm()
+        total_sym_mat = six_over_mmm()
 
     elif HM_number >= 489 and HM_number <= 502:
-        sym_mat = m_three()
+        total_sym_mat = m_three()
 
     elif HM_number >= 503 and HM_number <= 530:
-        sym_mat = m_three_m()
+        total_sym_mat = m_three_m()
 
     else:
         print('WARNING: NO SYMETERY APPLIED')
         print(f'spg: {spg_code}, pg: {HM_number}')
-        sym_mat = identity()
+        total_sym_mat = identity()
 
+    new_reflections = np.zeros( (len(total_sym_mat) * len(reflections), 4) )
+
+    for i, orig_reflection in enumerate(reflections):
+        for j,sym_op in enumerate(total_sym_mat):
+
+            new_reflection = np.matmul(sym_op, orig_reflection[:3].T)
+
+            new_reflections[len(reflections)*j + i,:3] = new_reflection
+
+            new_reflections[len(reflections)*j + i, 3] = orig_reflection[3]
+
+
+    return new_reflections
 
 
 
