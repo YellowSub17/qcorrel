@@ -6,7 +6,8 @@ HM_NUMBER_DICT = {
     'P 21 21 2': 112,
     'P 21 3': 492,
     'P 2 3': 489,
-    'I 41 3 2': 510
+    'I 41 3 2': 510,
+    'I 21 3': 493
 }
 
 
@@ -28,35 +29,7 @@ def two_over_m():
 
     ops_ind = 3
 
-    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
-    while ops_ind < multiplicity:
-
-
-        #loop through and get two operations
-        for i in range(ops_ind):
-            for j in range(ops_ind):
-
-                #multiply the operations
-                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
-
-                # Assume this is a new operation
-                is_new_sym = True
-
-                # loop through the syms ops that we have found
-                for sym_mat in total_sym_mat[:ops_ind, ...]:
-
-                    #check if we have already found this sym op
-                    if np.array_equal(sym_mat, new_sym_mat):
-                        #if we have, stop seaching for through the others and comparing them
-                        is_new_sym = False
-                        break
-
-                #if the newly calculated operation is unlike the others we previously found
-                if is_new_sym:
-                    #insert it into the total sym operations matrix
-                    total_sym_mat[ops_ind, ...] = new_sym_mat
-                    #increment the number of found operations for the while loop
-                    ops_ind += 1
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
 
     return total_sym_mat
 
@@ -76,36 +49,7 @@ def mmm():
 
     ops_ind = 4
 
-    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
-    while ops_ind < multiplicity:
-
-
-        #loop through and get two operations
-        for i in range(ops_ind):
-            for j in range(ops_ind):
-
-                #multiply the operations
-                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
-
-                # Assume this is a new operation
-                is_new_sym = True
-
-                # loop through the syms ops that we have found
-                for sym_mat in total_sym_mat[:ops_ind, ...]:
-
-                    #check if we have already found this sym op
-                    if np.array_equal(sym_mat, new_sym_mat):
-                        #if we have, stop seaching for through the others and comparing them
-                        is_new_sym = False
-                        break
-
-                #if the newly calculated operation is unlike the others we previously found
-                if is_new_sym:
-                    #insert it into the total sym operations matrix
-                    total_sym_mat[ops_ind, ...] = new_sym_mat
-                    #increment the number of found operations for the while loop
-                    ops_ind += 1
-
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
     return total_sym_mat
 
 def four_over_m():
@@ -125,36 +69,7 @@ def four_over_m():
     #number of operations that have been filld
     ops_ind = 4
 
-
-    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
-    while ops_ind < multiplicity:
-
-
-        #loop through and get two operations
-        for i in range(ops_ind):
-            for j in range(ops_ind):
-
-                #multiply the operations
-                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
-
-                # Assume this is a new operation
-                is_new_sym = True
-
-                # loop through the syms ops that we have found
-                for sym_mat in total_sym_mat[:ops_ind, ...]:
-
-                    #check if we have already found this sym op
-                    if np.array_equal(sym_mat, new_sym_mat):
-                        #if we have, stop seaching for through the others and comparing them
-                        is_new_sym = False
-                        break
-
-                #if the newly calculated operation is unlike the others we previously found
-                if is_new_sym:
-                    #insert it into the total sym operations matrix
-                    total_sym_mat[ops_ind, ...] = new_sym_mat
-                    #increment the number of found operations for the while loop
-                    ops_ind += 1
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
 
     return total_sym_mat
 
@@ -175,35 +90,7 @@ def four_over_mmm():
 
     ops_ind = 5
 
-    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
-    while ops_ind < multiplicity:
-
-
-        #loop through and get two operations
-        for i in range(ops_ind):
-            for j in range(ops_ind):
-
-                #multiply the operations
-                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
-
-                # Assume this is a new operation
-                is_new_sym = True
-
-                # loop through the syms ops that we have found
-                for sym_mat in total_sym_mat[:ops_ind, ...]:
-
-                    #check if we have already found this sym op
-                    if np.array_equal(sym_mat, new_sym_mat):
-                        #if we have, stop seaching for through the others and comparing them
-                        is_new_sym = False
-                        break
-
-                #if the newly calculated operation is unlike the others we previously found
-                if is_new_sym:
-                    #insert it into the total sym operations matrix
-                    total_sym_mat[ops_ind, ...] = new_sym_mat
-                    #increment the number of found operations for the while loop
-                    ops_ind += 1
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
 
     return total_sym_mat
 
@@ -222,36 +109,7 @@ def three_bar():
 
     ops_ind = 3
 
-    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
-    while ops_ind < multiplicity:
-
-
-        #loop through and get two operations
-        for i in range(ops_ind):
-            for j in range(ops_ind):
-
-                #multiply the operations
-                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
-
-                # Assume this is a new operation
-                is_new_sym = True
-
-                # loop through the syms ops that we have found
-                for sym_mat in total_sym_mat[:ops_ind, ...]:
-
-                    #check if we have already found this sym op
-                    if np.array_equal(sym_mat, new_sym_mat):
-                        #if we have, stop seaching for through the others and comparing them
-                        is_new_sym = False
-                        break
-
-                #if the newly calculated operation is unlike the others we previously found
-                if is_new_sym:
-                    #insert it into the total sym operations matrix
-                    total_sym_mat[ops_ind, ...] = new_sym_mat
-                    #increment the number of found operations for the while loop
-                    ops_ind += 1
-
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
     return total_sym_mat
 
 def three_bar_two_m():
@@ -273,36 +131,7 @@ def six_over_m():
 
     ops_ind = 4
 
-    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
-    while ops_ind < multiplicity:
-
-
-        #loop through and get two operations
-        for i in range(ops_ind):
-            for j in range(ops_ind):
-
-                #multiply the operations
-                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
-
-                # Assume this is a new operation
-                is_new_sym = True
-
-                # loop through the syms ops that we have found
-                for sym_mat in total_sym_mat[:ops_ind, ...]:
-
-                    #check if we have already found this sym op
-                    if np.array_equal(sym_mat, new_sym_mat):
-                        #if we have, stop seaching for through the others and comparing them
-                        is_new_sym = False
-                        break
-
-                #if the newly calculated operation is unlike the others we previously found
-                if is_new_sym:
-                    #insert it into the total sym operations matrix
-                    total_sym_mat[ops_ind, ...] = new_sym_mat
-                    #increment the number of found operations for the while loop
-                    ops_ind += 1
-
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
     return total_sym_mat
 
 def six_over_mmm():
@@ -322,35 +151,7 @@ def six_over_mmm():
 
     ops_ind = 5
 
-    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
-    while ops_ind < multiplicity:
-
-
-        #loop through and get two operations
-        for i in range(ops_ind):
-            for j in range(ops_ind):
-
-                #multiply the operations
-                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
-
-                # Assume this is a new operation
-                is_new_sym = True
-
-                # loop through the syms ops that we have found
-                for sym_mat in total_sym_mat[:ops_ind, ...]:
-
-                    #check if we have already found this sym op
-                    if np.array_equal(sym_mat, new_sym_mat):
-                        #if we have, stop seaching for through the others and comparing them
-                        is_new_sym = False
-                        break
-
-                #if the newly calculated operation is unlike the others we previously found
-                if is_new_sym:
-                    #insert it into the total sym operations matrix
-                    total_sym_mat[ops_ind, ...] = new_sym_mat
-                    #increment the number of found operations for the while loop
-                    ops_ind += 1
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
 
     return total_sym_mat
 
@@ -371,35 +172,7 @@ def m_three():
 
     ops_ind = 5
 
-    #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
-    while ops_ind < multiplicity:
-
-
-        #loop through and get two operations
-        for i in range(ops_ind):
-            for j in range(ops_ind):
-
-                #multiply the operations
-                new_sym_mat = np.matmul(total_sym_mat[i, ...], total_sym_mat[j, ...])
-
-                # Assume this is a new operation
-                is_new_sym = True
-
-                # loop through the syms ops that we have found
-                for sym_mat in total_sym_mat[:ops_ind, ...]:
-
-                    #check if we have already found this sym op
-                    if np.array_equal(sym_mat, new_sym_mat):
-                        #if we have, stop seaching for through the others and comparing them
-                        is_new_sym = False
-                        break
-
-                #if the newly calculated operation is unlike the others we previously found
-                if is_new_sym:
-                    #insert it into the total sym operations matrix
-                    total_sym_mat[ops_ind, ...] = new_sym_mat
-                    #increment the number of found operations for the while loop
-                    ops_ind += 1
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
 
     return total_sym_mat
 
@@ -421,6 +194,12 @@ def m_three_m():
 
     ops_ind = 6
 
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
+
+    return total_sym_mat
+
+def loop_generators(total_sym_mat,multiplicity, ops_ind):
+
     #while the last sym op in total_sym_op is empty (meaning there are still more sym ops to find...)
     while ops_ind < multiplicity:
 
@@ -450,6 +229,7 @@ def m_three_m():
                     total_sym_mat[ops_ind, ...] = new_sym_mat
                     #increment the number of found operations for the while loop
                     ops_ind += 1
+
 
     return total_sym_mat
 

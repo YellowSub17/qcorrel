@@ -1,8 +1,7 @@
-import time
-import CifFile
+
 import numpy as np
-import matplotlib.pyplot as plt
 import symmetry as sym
+
 
 def calc_q(h, k, l, ast, bst, cst):
     '''
@@ -13,7 +12,7 @@ def calc_q(h, k, l, ast, bst, cst):
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
-    # print(vector, np.linalg.norm(vector))
+   # print(vector, np.linalg.norm(vector))
     return vector / np.linalg.norm(vector)
 
 def angle_between(v1, v2):
@@ -65,11 +64,9 @@ def get_cif_reflections(cif):
     reflections = sym.apply_sym(reflections, cif[cif.visible_keys[0]]['_symmetry.space_group_name_H-M'])
 
 
-    # reflections=reflections[~np.all(hkl == 0, axis=1)]
-    #
 
     #removes the hkl=000
-    # reflections = np.where(np.all(reflections[...,:3]==0, axis=1))
+    reflections = reflections[np.where(np.all(reflections[...,:3]!=0, axis=1))[0]]
 
     return reflections
 
@@ -109,7 +106,7 @@ def calc_cif_qs(cif):
     return qs
 
 
-def correlate(cif, dQ, dTheta):
+def correlate(cif, dQ, dTheta, theta_bounds = None, q_bounds=None):
 
     '''
     given a cif file, get an array of q vectors from the reflections, ordered from lowest |q| to highest
@@ -118,22 +115,48 @@ def correlate(cif, dQ, dTheta):
     have pixels dQ by dTheta
     '''
 
+
+
     # get a list of sorted q vectors in the cif file
     qs_sort = calc_cif_qs(cif)
 
 
+
+
+    if theta_bounds ==None:
+        theta_min = 0
+        theta_max = 185
+    else:
+        theta_min = theta_bounds[0]
+        theta_max = theta_bounds[1]
+
+
+    if q_bounds==None:
+        q_min = 0
+        q_max = np.max(qs_sort[:, 3])
+    else:
+        q_min = q_bounds[0]
+        q_max = q_bounds[1]
+
+
+
     # number of angle and q indices
-    nTheta = int(360 / dTheta)
-    nQ = int(1.25*np.max(qs_sort[:, 3]) / dQ)
+    nTheta = int(round( (theta_max-theta_min) / dTheta))+1
+    nQ = int(round( (q_max-q_min)/ dQ))+1
     #print(nQ)
     # init histogram of theta values
+
     correl = np.zeros((nQ, nTheta))
     hist = np.zeros((nQ, nTheta))
 
 
 
     for i, q in enumerate(qs_sort):
-        iq = int(q[3]/dQ)
+        if q[3] > q_max or q[3] < q_min:
+            qs_sort[i,4] = -1
+            continue
+
+        iq = int(round(q[3]/dQ))
         if (iq>=0) and (iq < nQ):
             qs_sort[i,4] = iq
         else:
@@ -145,26 +168,37 @@ def correlate(cif, dQ, dTheta):
     # for every q vector
     for i, q in enumerate(qs_sort):
 
+        if q[4] == -1:
+            continue
+
         if i%400== 0:
             print(f'Correlating: {i}/{qs_sort.shape[0]} (Q vector {q})', sep='\t')
 
 
         iq = int(q[4])
 
+        q_primes = np.where(qs_sort[:,4]==iq)[0]
 
-        for j, q_prime in enumerate(qs_sort):
 
+        for j in q_primes:
 
-            iq_prime = int(q_prime[4])
-
-            if i==j or iq != iq_prime:
+            if i==j:
                 continue
+
+
+            q_prime = qs_sort[j,...]
 
 
             # calculate the angle between the vectors, and the index for theta in the corell map
             theta = np.degrees(angle_between(q[:3], q_prime[:3]))
-            # print(theta)
-            theta_ind = int((theta / 360.0) * (nTheta - 1))
+
+
+            if theta > theta_max or theta < theta_min:
+
+                continue
+
+
+            theta_ind = int(round(((theta-theta_min) / dTheta)))
 
 
             # increment the value of the histogram for this q magnitude and angle
@@ -173,59 +207,13 @@ def correlate(cif, dQ, dTheta):
             hist[iq, theta_ind] += 1
 
 
+    if q_bounds==None:
+        return correl, hist, q_max
+
+
     return correl, hist
 
 
-
-
-
-protein_names = ['5hul']
-
-dqs = [0.01]
-
-hkl_num = [5]
-
-# Read in Cif file
-for name in protein_names:
-    for num in hkl_num:
-
-        print('Reading Cif')
-        sf_cif = CifFile.ReadCif(f'cifs\\{name}-sf_less{num}.cif')
-        for dq in dqs:
-
-            print(f'STARTING NEW - {name} {num} {dq}')
-
-            correl, hist = correlate(sf_cif, dq,  0.5)
-
-
-            plt.figure()
-            plt.title(f'{name}_less{num} correl - dq={dq}')
-            plt.imshow(correl, cmap='plasma', aspect='auto')
-            plt.colorbar()
-            # plt.savefig(f'saved_plots\\{name}_less{num}_correl_dq{int(dq*1000)}')
-            # plt.close('all')
-
-            plt.figure()
-            plt.title(f'{name}_less{num} log10 correl - dq={dq}')
-            plt.imshow(np.log10(correl), cmap='plasma', aspect='auto')
-            plt.colorbar()
-            # plt.savefig(f'saved_plots\\{name}_less{num}_logcorrel_dq{int(dq*1000)}')
-            # plt.close('all')
-
-
-            plt.figure()
-            plt.title(f'{name}_less{num} hist - dq={dq}')
-            plt.imshow(hist, cmap='plasma', aspect='auto')
-            plt.colorbar()
-
-            plt.figure()
-            plt.title(f'{name}_less{num} log10 hist - dq={dq}')
-            plt.imshow(np.log10(hist), cmap='plasma', aspect='auto')
-            plt.colorbar()
-            # plt.savefig(f'saved_plots\\{name}_less{num}_hist_dq{int(dq*1000)}')
-            # plt.close('all')
-
-            print('\n\n\n')
 
 
 
