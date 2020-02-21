@@ -1,5 +1,8 @@
 import numpy as np
 
+
+
+#http://pmsl.planet.sci.kobe-u.ac.jp/~seto/?page_id=37&lang=en
 HM_NUMBER_DICT = {
     'P 1': 1,
     'P 21 21 21': 115,
@@ -7,7 +10,12 @@ HM_NUMBER_DICT = {
     'P 21 3': 492,
     'P 2 3': 489,
     'I 41 3 2': 510,
-    'I 21 3': 493
+    'I 21 3': 493,
+    'P 31 2 1': 441,
+    'P 32 2 1': 443,
+    'I 1 2 1': 11,
+    "P 41 21 2": 369,
+    "P 41 2 2": 368,
 }
 
 
@@ -24,8 +32,8 @@ def two_over_m():
 
     # input the basic generators into total array
     total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
-    total_sym_mat[2, ...] = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #2 fold rot on y
-    total_sym_mat[5, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
+    total_sym_mat[1, ...] = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #2 fold rot on y
+    total_sym_mat[2, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
 
     ops_ind = 3
 
@@ -112,8 +120,65 @@ def three_bar():
     loop_generators(total_sym_mat, multiplicity, ops_ind)
     return total_sym_mat
 
-def three_bar_two_m():
-    print('Plz fix three_bar_two_m function in symmetry')
+
+########
+# def three_two():
+#     # Number of equivalent points
+#     multiplicity = 6
+#
+#     # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+#     total_sym_mat = np.zeros((multiplicity, 3, 3))
+#
+#
+#     # input the basic generators into total array
+#     total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+#     total_sym_mat[1, ...] = np.array([[0, -1, 0], [1, -1, 0], [0, 0, 1]])  #  3 fold rot on z
+#     total_sym_mat[2, ...] = np.array([[0, -1, 0], [-1, 0, 0], [0, 0, -1]])  #2 fold rot on (1-10)
+#
+#     ops_ind = 3
+#
+#     loop_generators(total_sym_mat, multiplicity, ops_ind)
+#     return total_sym_mat
+#
+# def three_m():
+#     # Number of equivalent points
+#     multiplicity = 6
+#
+#     # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+#     total_sym_mat = np.zeros((multiplicity, 3, 3))
+#
+#
+#     # input the basic generators into total array
+#     total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+#     total_sym_mat[1, ...] = np.array([[0, -1, 0], [1, -1, 0], [0, 0, 1]])  #  3 fold rot on z
+#     total_sym_mat[2, ...] = np.array([[0, -1, 0], [-1, 0, 0], [0, 0, 1]])  # mirror on (110)
+#
+#     ops_ind = 3
+#
+#     loop_generators(total_sym_mat, multiplicity, ops_ind)
+#     return total_sym_mat
+
+def three_bar_m():
+    # Number of equivalent points
+    multiplicity = 12
+
+    # init array of sym ops (each op is a 3x3 array, and there are multiplicity of them
+    total_sym_mat = np.zeros((multiplicity, 3, 3))
+
+
+    # input the basic generators into total array
+    total_sym_mat[0, ...] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])  # identity
+    total_sym_mat[1, ...] = np.array([[0, -1, 0], [1, -1, 0], [0, 0, 1]])  #  3 fold rot on z
+    total_sym_mat[2, ...] = np.array([[0, -1, 0], [-1, 0, 0], [0, 0, -1]])  #2 fold rot on (1-10)
+    total_sym_mat[3, ...] = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])  # inversion
+
+    ops_ind = 4
+
+    loop_generators(total_sym_mat, multiplicity, ops_ind)
+    return total_sym_mat
+
+
+
 
 def six_over_m():
     # Number of equivalent points
@@ -256,8 +321,14 @@ def apply_sym(reflections, spg_code):
     elif HM_number >= 430 and HM_number <= 437:
         total_sym_mat = three_bar()
 
+    # elif HM_number >= 438 and HM_number <= 445:
+    #     total_sym_mat = three_two()
+    #
+    # elif HM_number >= 446 and HM_number <= 453:
+    #     total_sym_mat = three_m()
+
     elif HM_number >= 438 and HM_number <= 461:
-        total_sym_mat = three_bar_two_m()
+        total_sym_mat = three_bar_m()
 
     elif HM_number >= 462 and HM_number <= 470:
         total_sym_mat = six_over_m()
@@ -290,6 +361,9 @@ def apply_sym(reflections, spg_code):
 
     return new_reflections
 
+
+
+x = three_bar_m()
 
 
 

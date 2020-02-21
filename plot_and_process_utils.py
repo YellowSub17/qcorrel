@@ -16,6 +16,7 @@ def plot_map(map, title='', save=None, cmap='plasma', extent=None, xlabel = 'Cor
     if type(save)==str:
         plt.savefig(f'saved_plots\\{save}.png')
         plt.close(plt.gcf().number)
+    plt.show()
 
 def save_tiff(im, name="IMAGE"):
 
