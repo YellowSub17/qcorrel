@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import imageio
-
+from pathlib import Path
 
 
 def plot_map(map, title='', save=None, cmap='plasma', extent=None, xlabel = 'Correlation Angle $\Delta$ [Degrees]',
@@ -14,14 +14,18 @@ def plot_map(map, title='', save=None, cmap='plasma', extent=None, xlabel = 'Cor
     plt.ylabel(ylabel)
     plt.colorbar()
     if type(save)==str:
-        plt.savefig(f'saved_plots\\{save}.png')
+        save_path = Path('saved_plots') / f'{save}.png'
+        plt.savefig(str(save_path))
         plt.close(plt.gcf().number)
     plt.show()
 
 def save_tiff(im, name="IMAGE"):
 
-    path = f'tiffs\\{name}.tiff'
-    imageio.imsave(path, im)
+    if name[-4:]=='tiff':
+        save_path = Path('tiffs') / f'{name}'
+    else:
+        save_path = Path('tiffs') / f'{name}.tiff'
+    imageio.imsave(save_path, im)
 
 
 

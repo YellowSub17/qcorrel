@@ -1,7 +1,8 @@
 import time
 import CifFile
 import numpy as np
-import matplotlib.pyplot as plt
+from pathlib import Path
+
 
 
 
@@ -12,7 +13,7 @@ def cut_hkl(fname, resolutions, error=None):
     remaining reflections are saved as outfname
     '''
     print(f'Reading Cif {fname}')
-    cif = CifFile.ReadCif(f'{fname}.cif') # read the cif file
+    cif = CifFile.ReadCif(fname) # read the cif file
 
     cif_key = cif.visible_keys[0]
 
@@ -26,7 +27,7 @@ def cut_hkl(fname, resolutions, error=None):
 
     k_refl_orig = cif[cif_key]['_refln.index_k']
     k_refl_orig = np.array([int(k) for k in k_refl_orig])
-
+    
     l_refl_orig = cif[cif_key]['_refln.index_l']
     l_refl_orig = np.array([int(l) for l in l_refl_orig])
 
@@ -145,12 +146,10 @@ def cut_hkl(fname, resolutions, error=None):
 #
 
 
+cif_path = Path('cifs')
+proteins = [('CypA', '4yug')]
 
-pdb_codes = ['CypA\\4yug','CypA\\4yuh', 'CypA\\4yui', 'CypA\\4yuj', 'CypA\\4yuk', 'CypA\\4yul', 'CypA\\4yum',
-                'GFP\\2b3p', 'GFP\\5z6y', 'GFP\\6b9c', 'GFP\\2q6p','GFP\\4lqt']
-pdb_codes = ['Lyso\\253l','Lyso\\254l']
 
-#pdb_codes = ['Errors\\253l','Errors\\254l']
 
 
 
@@ -163,8 +162,9 @@ resolutions = [4,8,16]
 
 
 ## Utility to edit cif files for less reflections
-for name in pdb_codes:
+for protein in proteins:
     start = time.time()
-    cut_hkl(f'cifs\\{name}-sf',resolutions)
+    protien_path = cif_path / protein [0] / f'{protein[1]}-sf.cif' 
+    cut_hkl(str(protien_path),resolutions)
     end = time.time()
     print(f'Run time: {end-start} seconds.\n\n\n')
