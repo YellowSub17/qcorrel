@@ -3,6 +3,9 @@ import numpy as np
 import imageio
 from pathlib import Path
 
+import struct
+
+
 
 def plot_map(map, title='', save=None, cmap='plasma', extent=None, xlabel = 'Correlation Angle $\Delta$ [Degrees]',
              ylabel= 'Scattering Magnitude $q$ [1/$\AA$]'):
@@ -28,6 +31,18 @@ def save_tiff(im, name="IMAGE"):
     imageio.imsave(save_path, im)
 
 
+def save_dbin(data, name='DBIN'):
+
+    if name[-4:]=='dbin':
+        save_path = Path('tiffs') / f'{name}'
+    else:
+        save_path = Path('tiffs') / f'{name}.dbin'
+    
+    f = open(save_path, "wb")
+    fmt = '<' + 'd' * data.size
+    bin_in = struct.pack(fmt, *data.flatten()[:])
+    f.write(bin_in)
+    f.close()
 
 
 def array_shift(array, xshift=0, yshift=0):

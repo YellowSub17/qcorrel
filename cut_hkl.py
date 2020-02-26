@@ -141,30 +141,31 @@ def cut_hkl(fname, resolutions, error=None):
         out_file.close()
 
 
-#
-# def error_pm(fname, mag=None):
-#
-
-
-cif_path = Path('cifs')
-proteins = [('CypA', '4yug')]
 
 
 
 
+if __name__=="__main__":
 
-
-
-####INCREASEING ORDER!!
-resolutions = [4,8,16]
-
-
-
-
-## Utility to edit cif files for less reflections
-for protein in proteins:
-    start = time.time()
-    protien_path = cif_path / protein [0] / f'{protein[1]}-sf.cif' 
-    cut_hkl(str(protien_path),resolutions)
-    end = time.time()
-    print(f'Run time: {end-start} seconds.\n\n\n')
+    cif_path = Path('cifs')
+    proteins = [('CypA', '4yug')]
+    
+    
+    
+    
+    
+    
+    
+    ####INCREASEING ORDER!!
+    resolutions = [4,8,16]
+    
+    
+    
+    
+    ## Utility to edit cif files for less reflections
+    for protein in proteins:
+        start = time.time()
+        protien_path = cif_path / protein [0] / f'{protein[1]}-sf.cif' 
+        cut_hkl(str(protien_path),resolutions)
+        end = time.time()
+        print(f'Run time: {end-start} seconds.\n\n\n')
