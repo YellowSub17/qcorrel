@@ -223,7 +223,7 @@ if __name__ == '__main__':
 
     sf_cif = CifFile.ReadCif(str(prot_path))
     start = time.time()
-    correl, hist = full_correlate(sf_cif, 150, 150, 0.05)
+    correl, hist = full_correlate(sf_cif, 150, 150, 0.2)
     print(f'time taken {time.time() - start}')
 
     ppu.plot_map(np.sum(hist, axis=0))
