@@ -1,6 +1,6 @@
 import numpy as np
 import symmetry as sym
-
+from pathlib import Path
 
 
 def calc_q(h, k, l, ast, bst, cst):
@@ -216,32 +216,26 @@ if __name__ == '__main__':
     import CifFile
     import plot_and_process_utils as ppu
     import matplotlib.pyplot as plt
-    from pathlib import Path
+    from mpl_toolkits.mplot3d import Axes3D
+    import time
 
     prot_path = Path('cifs/Lyso/253l-sf_res8.cif')
 
     sf_cif = CifFile.ReadCif(str(prot_path))
+    start = time.time()
+    correl, hist = full_correlate(sf_cif, 150, 150, 0.05)
+    print(f'time taken {time.time() - start}')
+
+    ppu.plot_map(np.sum(hist, axis=0))
+    ppu.plot_map(np.sum(hist, axis=1))
+    ppu.plot_map(np.sum(hist, axis=2))
+
+    x,y,z = np.where(hist!=0)
 
 
-    correl, hist = full_correlate(sf_cif,50,50)
-
-
-
-
-    x,y,z = np.where(correl!=0)
-
-
-    ppu.plot_map(correl[25,:,:])
-    ppu.plot_map(correl[:,25,:])
-    ppu.plot_map(correl[:,:,25])
-
-
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
     fig = plt.figure()
     Axes3D(fig).scatter(x,y,z)
     plt.show()
-
 
 
 
