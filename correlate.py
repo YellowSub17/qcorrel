@@ -195,13 +195,11 @@ def full_correlate_threaded(cif, nQ, nTheta, qmax=0.05, nThreads=2):
 
     qs= qs[correl_vec_indices]
 
-    correl = np.zeros((nQ,nQ, nTheta))
-    hist = np.zeros((nQ,nQ, nTheta))
 
 
 
     for q_i, q in enumerate(qs):
-        print(f'Correlating vector {q_i}/{len(qs)}. q={q[:3]}')
+        print(f'Correlating vector {q_i}/{len(qs)}. q={q[:4]}')
         remainder = len(qs)%nThreads
         chunk_size= (len(qs)-remainder)/nThreads
 
@@ -211,28 +209,36 @@ def full_correlate_threaded(cif, nQ, nTheta, qmax=0.05, nThreads=2):
 
         for thread_i in range(nThreads):
 
-            chunk_bounds = (int(chunk_size*thread_i), int(chunk_size*(thread_i+1)))
+            chunk_bounds = [int(chunk_size*thread_i), int(chunk_size*(thread_i+1))]
+
+            if thread_i == nThreads-1:
+                chunk_bounds[1] += remainder
 
             threads[thread_i] = threading.Thread(target=chunk_thread,
-                                      args = [correl, hist,nQ,nTheta,qmax, qs, q_i,chunk_bounds[0],chunk_bounds[1],
+                                      args = [nQ,nTheta,qmax, qs, q_i ,chunk_bounds[0],chunk_bounds[1],
                                               results, thread_i])
 
 
             threads[thread_i].start()
 
-        # for thread_i in range(nThreads):
+        for thread_i in range(nThreads):
             threads[thread_i].join()
 
-        print(results)
+        #print(results)
 
-        return correl, hist, qs, results
+    return results
 
 
-def chunk_thread(correl, hist, nQ,nTheta, qmax, qs, q_i,  chunkb1, chunkb2, results, thread_i):
+def chunk_thread( nQ,nTheta, qmax, qs, q_i,  chunkb1, chunkb2, results, thread_i):
 
     q = qs[q_i]
+
     q_ind = int(round( (q[3]*nQ)/qmax ))-1
-    print('chunkb1,b2:', chunkb1,chunkb2)
+    # print('chunkb1,b2:', chunkb1,chunkb2)
+
+    correl = np.zeros((nQ,nQ, nTheta))
+    hist = np.zeros((nQ,nQ, nTheta))
+
     for q_prime_chunk_i, q_prime in enumerate(qs[chunkb1:chunkb2]):
 
 
@@ -244,41 +250,42 @@ def chunk_thread(correl, hist, nQ,nTheta, qmax, qs, q_i,  chunkb1, chunkb2, resu
 
 
         if q_ind <0 or q_prime_ind <0 or theta_ind <0:
-            print('Vol position', q_ind, q_prime_ind, theta_ind)
+            pass
+        #print('Vol position', q_ind, q_prime_ind, theta_ind)
         correl[q_ind, q_prime_ind, theta_ind] += q[6]*q_prime[6]
         hist[q_ind, q_prime_ind, theta_ind] += 1
 
-    results[thread_i] = [correl, hist]
+    results[thread_i] = hist#, hist]
 
 
 
 
-# def full_correlate(cif, nQ, nTheta, qmax=0.05):
-#     qs = calc_cif_qs(cif)
-#
-#     correl_vec_indices = np.where(qs[:,3] < qmax)[0]
-#
-#     qs= qs[correl_vec_indices]
-#
-#     correl = np.zeros((nQ, nQ, nTheta))
-#     hist = np.zeros((nQ, nQ, nTheta))
-#
-#
-#
-#     for i, q in enumerate(qs):
-#         print(f'Correlating vector {i}/{len(qs)}. q={q[:3]}')
-#         q_ind = int(round((q[3]/float(qmax))*nQ))-1
-#         for q_prime in qs:
-#             q_prime_ind = int(round((q_prime[3]/float(qmax))*nQ))-1
-#
-#             theta = np.degrees(angle_between(q[:3], q_prime[:3]))
-#             theta_ind = int(round((theta/180.0)*nTheta))-1
-#
-#             correl[q_ind, q_prime_ind, theta_ind] += q[6]*q[6]
-#             hist+=1
-#
-#
-#     return correl, hist
+def full_correlate(cif, nQ, nTheta, qmax=0.1):
+    qs = calc_cif_qs(cif)
+
+    correl_vec_indices = np.where(qs[:,3] < qmax)[0]
+
+    qs= qs[correl_vec_indices]
+
+    correl = np.zeros((nQ, nQ, nTheta))
+    hist = np.zeros((nQ, nQ, nTheta))
+
+
+
+    for i, q in enumerate(qs):
+        print(f'Correlating vector {i}/{len(qs)}. q={q[:3]}')
+        q_ind = int(round((q[3]/float(qmax))*nQ))-1
+        for q_prime in qs:
+            q_prime_ind = int(round((q_prime[3]/float(qmax))*nQ))-1
+
+            theta = np.degrees(angle_between(q[:3], q_prime[:3]))
+            theta_ind = int(round((theta/180.0)*nTheta))-1
+
+            correl[q_ind, q_prime_ind, theta_ind] += q[6]*q[6]
+            hist+=1
+
+
+    return correl, hist
 
 
 if __name__ == '__main__':
@@ -291,11 +298,34 @@ if __name__ == '__main__':
 
     sf_cif = CifFile.ReadCif(str(prot_path))
 
-    x, y, qs, results = full_correlate_threaded(sf_cif,100,100, qmax=0.1)
 
-    print(np.where(x>0))
-    ppu.plot_map(x[99,:,:],'Correl')
+    #correl2, hist = full_correlate(sf_cif,50,50)
 
+
+
+
+
+
+
+
+    #correl = np.zeros(results[0].shape)
+
+    # for thread in results:
+    #     correl += thread
+    #
+    x,y,z = np.where(correl2!=0)
+
+    #
+    # ppu.plot_map(correl[25,:,:])
+    # ppu.plot_map(correl[:,25,:])
+    # ppu.plot_map(correl[:,:,25])
+    #
+
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()
+    Axes3D(fig).scatter(x,y,z)
+    plt.show()
 
 
 
