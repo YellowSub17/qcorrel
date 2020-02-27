@@ -1,6 +1,6 @@
-
 import numpy as np
 import symmetry as sym
+import threading
 
 
 def calc_q(h, k, l, ast, bst, cst):
@@ -12,7 +12,7 @@ def calc_q(h, k, l, ast, bst, cst):
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
-   # print(vector, np.linalg.norm(vector))
+    # print(vector, np.linalg.norm(vector))
     return vector / np.linalg.norm(vector)
 
 def angle_between(v1, v2):
@@ -21,7 +21,6 @@ def angle_between(v1, v2):
     v1_u = unit_vector(v1)
     v2_u = unit_vector(v2)
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
-
 
 
 def get_cif_reflections(cif):
@@ -60,19 +59,15 @@ def get_cif_reflections(cif):
 
     reflections[:, 3] = inten_meas
 
-
     reflections = sym.apply_sym(reflections, cif[cif.visible_keys[0]]['_symmetry.space_group_name_H-M'])
 
-
-
-    #removes the hkl=000
-    reflections = reflections[np.where(np.all(reflections[...,:3]!=0, axis=1))[0]]
+    # removes the hkl=000
+    reflections = reflections[np.where(np.all(reflections[..., :3] != 0, axis=1))[0]]
 
     return reflections
 
 
 def calc_cif_qs(cif):
-
     '''
     given a cif file, find the reflections and calculated the scattering vector q for each reflection
     return a an array with coloumns qx,qy,qz, |q|, 0,0, intens. (ordered my |q| lowest to highest down the col)
@@ -102,12 +97,10 @@ def calc_cif_qs(cif):
         qs[i, 3] = np.sqrt(q.dot(q))
         qs[i, 6] = reflection[3]
 
-
     return qs
 
 
-def correlate(cif, dQ, dTheta, theta_bounds = None, q_bounds=None):
-
+def correlate(cif, dQ, dTheta, theta_bounds=None, q_bounds=None):
     '''
     given a cif file, get an array of q vectors from the reflections, ordered from lowest |q| to highest
     find the correlation shells of thickness dQ_shell for each vector
@@ -115,55 +108,42 @@ def correlate(cif, dQ, dTheta, theta_bounds = None, q_bounds=None):
     have pixels dQ by dTheta
     '''
 
-
-
     # get a list of sorted q vectors in the cif file
     qs_sort = calc_cif_qs(cif)
 
-
-
-
-    if theta_bounds ==None:
+    if theta_bounds == None:
         theta_min = 0
         theta_max = 185
     else:
         theta_min = theta_bounds[0]
         theta_max = theta_bounds[1]
 
-
-    if q_bounds==None:
+    if q_bounds == None:
         q_min = 0
         q_max = np.max(qs_sort[:, 3])
     else:
         q_min = q_bounds[0]
         q_max = q_bounds[1]
 
-
-
     # number of angle and q indices
-    nTheta = int(round( (theta_max-theta_min) / dTheta))+1
-    nQ = int(round( (q_max-q_min)/ dQ))+1
-    #print(nQ)
+    nTheta = int(round((theta_max - theta_min) / dTheta)) + 1
+    nQ = int(round((q_max - q_min) / dQ)) + 1
+    # print(nQ)
     # init histogram of theta values
 
     correl = np.zeros((nQ, nTheta))
     hist = np.zeros((nQ, nTheta))
 
-
-
     for i, q in enumerate(qs_sort):
         if q[3] > q_max or q[3] < q_min:
-            qs_sort[i,4] = -1
+            qs_sort[i, 4] = -1
             continue
 
-        iq = int(round(q[3]/dQ))
-        if (iq>=0) and (iq < nQ):
-            qs_sort[i,4] = iq
+        iq = int(round(q[3] / dQ))
+        if (iq >= 0) and (iq < nQ):
+            qs_sort[i, 4] = iq
         else:
             print('bing', q, iq)
-
-
-
 
     # for every q vector
     for i, q in enumerate(qs_sort):
@@ -171,45 +151,35 @@ def correlate(cif, dQ, dTheta, theta_bounds = None, q_bounds=None):
         if q[4] == -1:
             continue
 
-        if i%400== 0:
+        if i % 400 == 0:
             print(f'Correlating: {i}/{qs_sort.shape[0]} (Q vector {q})', sep='\t')
-
 
         iq = int(q[4])
 
-        q_primes = np.where(qs_sort[:,4]==iq)[0]
-
+        q_primes = np.where(qs_sort[:, 4] == iq)[0]
 
         for j in q_primes:
 
-            if i==j:
+            if i == j:
                 continue
 
-
-            q_prime = qs_sort[j,...]
-
+            q_prime = qs_sort[j, ...]
 
             # calculate the angle between the vectors, and the index for theta in the corell map
             theta = np.degrees(angle_between(q[:3], q_prime[:3]))
 
-
             if theta > theta_max or theta < theta_min:
-
                 continue
 
-
-            theta_ind = int(round(((theta-theta_min) / dTheta)))
-
+            theta_ind = int(round(((theta - theta_min) / dTheta)))
 
             # increment the value of the histogram for this q magnitude and angle
-            correl[iq, theta_ind] += q[6]*q_prime[6]
+            correl[iq, theta_ind] += q[6] * q_prime[6]
 
             hist[iq, theta_ind] += 1
 
-
-    if q_bounds==None:
+    if q_bounds == None:
         return correl, hist, q_max
-
 
     return correl, hist
 
@@ -217,4 +187,161 @@ def correlate(cif, dQ, dTheta, theta_bounds = None, q_bounds=None):
 
 
 
+def full_correlate_threaded(cif, nQ, nTheta, qmax=0.05, nThreads=2):
 
+    qs = calc_cif_qs(cif)
+
+    correl_vec_indices = np.where(qs[:,3] < qmax)[0]
+
+    qs= qs[correl_vec_indices]
+
+    correl = np.zeros((nQ,nQ, nTheta))
+    hist = np.zeros((nQ,nQ, nTheta))
+
+
+
+    for q_i, q in enumerate(qs):
+        print(f'Correlating vector {q_i}/{len(qs)}. q={q[:3]}')
+        remainder = len(qs)%nThreads
+        chunk_size= (len(qs)-remainder)/nThreads
+
+
+        threads = [None] *nThreads
+        results = [None] *nThreads
+
+        for thread_i in range(nThreads):
+
+            chunk_bounds = (int(chunk_size*thread_i), int(chunk_size*(thread_i+1)))
+
+            threads[thread_i] = threading.Thread(target=chunk_thread,
+                                      args = [correl, hist,nQ,nTheta,qmax, qs, q_i,chunk_bounds[0],chunk_bounds[1],
+                                              results, thread_i])
+
+
+            threads[thread_i].start()
+
+        # for thread_i in range(nThreads):
+            threads[thread_i].join()
+
+        print(results)
+
+        return correl, hist, qs, results
+
+
+def chunk_thread(correl, hist, nQ,nTheta, qmax, qs, q_i,  chunkb1, chunkb2, results, thread_i):
+
+    q = qs[q_i]
+    q_ind = int(round( (q[3]*nQ)/qmax ))-1
+    print('chunkb1,b2:', chunkb1,chunkb2)
+    for q_prime_chunk_i, q_prime in enumerate(qs[chunkb1:chunkb2]):
+
+
+
+        q_prime_ind  = int(round( (q_prime[3]*nQ)/qmax ))-1
+
+        theta =np.degrees(angle_between(q[:3], q_prime[:3]))
+        theta_ind = int(round(  (theta*nTheta)/180.0  ))-1
+
+
+        if q_ind <0 or q_prime_ind <0 or theta_ind <0:
+            print('Vol position', q_ind, q_prime_ind, theta_ind)
+        correl[q_ind, q_prime_ind, theta_ind] += q[6]*q_prime[6]
+        hist[q_ind, q_prime_ind, theta_ind] += 1
+
+    results[thread_i] = [correl, hist]
+
+
+
+
+# def full_correlate(cif, nQ, nTheta, qmax=0.05):
+#     qs = calc_cif_qs(cif)
+#
+#     correl_vec_indices = np.where(qs[:,3] < qmax)[0]
+#
+#     qs= qs[correl_vec_indices]
+#
+#     correl = np.zeros((nQ, nQ, nTheta))
+#     hist = np.zeros((nQ, nQ, nTheta))
+#
+#
+#
+#     for i, q in enumerate(qs):
+#         print(f'Correlating vector {i}/{len(qs)}. q={q[:3]}')
+#         q_ind = int(round((q[3]/float(qmax))*nQ))-1
+#         for q_prime in qs:
+#             q_prime_ind = int(round((q_prime[3]/float(qmax))*nQ))-1
+#
+#             theta = np.degrees(angle_between(q[:3], q_prime[:3]))
+#             theta_ind = int(round((theta/180.0)*nTheta))-1
+#
+#             correl[q_ind, q_prime_ind, theta_ind] += q[6]*q[6]
+#             hist+=1
+#
+#
+#     return correl, hist
+
+
+if __name__ == '__main__':
+    import CifFile
+    import plot_and_process_utils as ppu
+    import matplotlib.pyplot as plt
+    from pathlib import Path
+
+    prot_path = Path('cifs/Lyso/253l-sf_res8.cif')
+
+    sf_cif = CifFile.ReadCif(str(prot_path))
+
+    x, y, qs, results = full_correlate_threaded(sf_cif,100,100, qmax=0.1)
+
+    print(np.where(x>0))
+    ppu.plot_map(x[99,:,:],'Correl')
+
+
+
+
+
+
+
+
+    # cif_path = Path('cifs')
+    #
+    #
+    # proteins=[('CypA', '4yug'),]
+    #
+    #
+    #
+    # res_num = [16, 8]
+    #
+    # # Read in Cif file
+    # for protein in proteins:
+    #     for res in res_num:
+    #
+    #         fname = f'{protein[1]}-sf_res{res}.cif'
+    #         protein_path = cif_path /protein[0] /fname
+    #
+    #         print(protein_path)
+    #
+    #
+    #         print('Reading Cif')
+    #         sf_cif = CifFile.ReadCif(str(protein_path))
+    #
+    #
+    #         print(f'STARTING NEW - {fname} {res}')
+    #
+    #         qmax=0.22
+    #         correl, hist = correlate(sf_cif, 0.001,  0.5, q_bounds=[0,qmax])
+    #
+    #         #correl, hist, qmax = correlate(sf_cif, dq,  0.5)
+    #
+    #         correl = ppu.convolve_gaussian(correl, 3,3)
+    #
+    #         ppu.save_dbin(correl, name=f'{protein_path.stem}')
+    #         ppu.save_tiff(correl.astype(np.int32),f'{protein_path.stem}')
+    #
+    #
+    #         ppu.plot_map(correl,title=f'correl {fname}, res {res}, qmax {qmax}', extent=[0,180, qmax,0], save=f'{protein_path.stem}.tiff')
+    #
+    #
+    #
+    #         print('\n\n\n')
+    #

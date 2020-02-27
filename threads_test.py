@@ -1,24 +1,18 @@
-from multiprocessing.pool import ThreadPool
+
+import threading
 import numpy as np
 
-nThreads = 2
-x = np.zeros((5,3))
+arr = np.zeros( (10, 5))
 
 
-def thread_fn(*args):
+def fill_thread(x, i):
+    x[:,i] +=1
 
 
-    x +=n
+threadObj = threading.Thread(target=fill_thread, args=[arr, 0])
+threadObj2 = threading.Thread(target=fill_thread, args=[arr, 1])
 
+threadObj.start()
+threadObj2.start()
 
-inputs = ((x, 0), (x,3), (x, 5))
-
-
-pool = ThreadPool(processes=nThreads)
-
-async_res = pool.apply_async(thread_fn, inputs)
-
-val = async_res.get()
-
-
-print(val)
+print(arr)
