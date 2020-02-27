@@ -191,8 +191,8 @@ def full_correlate(cif, nQ, nTheta, qmax=0.1):
 
     qs= qs[correl_vec_indices]
 
-    correl = np.zeros((nQ, nQ, nTheta))
-    hist = np.zeros((nQ, nQ, nTheta))
+    correl = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
+    hist = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
 
 
 
@@ -223,19 +223,21 @@ if __name__ == '__main__':
 
     sf_cif = CifFile.ReadCif(str(prot_path))
     start = time.time()
-    correl, hist = full_correlate(sf_cif, 150, 150, 0.2)
+    correl, hist = full_correlate(sf_cif, 150, 360, 0.1)
     print(f'time taken {time.time() - start}')
 
     ppu.plot_map(np.sum(hist, axis=0))
-    ppu.plot_map(np.sum(hist, axis=1))
-    ppu.plot_map(np.sum(hist, axis=2))
+    ppu.save_tiff(np.sum(correl, axis=0), 'not_threaded')
 
-    x,y,z = np.where(hist!=0)
+    # ppu.plot_map(np.sum(hist, axis=1))
+    # ppu.plot_map(np.sum(hist, axis=2))
 
-
-    fig = plt.figure()
-    Axes3D(fig).scatter(x,y,z)
-    plt.show()
+    # x,y,z = np.where(hist!=0)
+    #
+    #
+    # fig = plt.figure()
+    # Axes3D(fig).scatter(x,y,z)
+    # plt.show()
 
 
 

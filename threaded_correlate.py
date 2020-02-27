@@ -79,7 +79,7 @@ if __name__ == '__main__':
     sf_cif = CifFile.ReadCif(str(prot_path))
 
     start = time.time()
-    hist = full_correlate_threaded(sf_cif, 150, 150, 0.2, 8)
+    hist = full_correlate_threaded(sf_cif, 150,150, 0.2, 8)
     print(f'time taken {time.time() - start}')
 
     ppu.plot_map(np.sum(hist, axis=0))
