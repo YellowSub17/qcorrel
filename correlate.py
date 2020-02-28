@@ -15,6 +15,7 @@ def unit_vector(vector):
     # print(vector, np.linalg.norm(vector))
     return vector / np.linalg.norm(vector)
 
+
 def angle_between(v1, v2):
     """ Returns the angle in radians between vectors 'v1' and 'v2'
     """
@@ -128,9 +129,8 @@ def correlate(cif, dQ, dTheta, theta_bounds=None, q_bounds=None):
     # number of angle and q indices
     nTheta = int(round((theta_max - theta_min) / dTheta)) + 1
     nQ = int(round((q_max - q_min) / dQ)) + 1
-    # print(nQ)
-    # init histogram of theta values
 
+    # init histogram of theta values
     correl = np.zeros((nQ, nTheta))
     hist = np.zeros((nQ, nTheta))
 
@@ -185,29 +185,47 @@ def correlate(cif, dQ, dTheta, theta_bounds=None, q_bounds=None):
 
 
 def full_correlate(cif, nQ, nTheta, qmax=0.1):
+
+    '''
+    Produce a 3D correlation volume of the scattering vectors within a CIF file. nQ and qmax specify the resolution in
+    qspace, ntheta defines the angular resolution (theta max locked at 180).
+    '''
+    # get the scattering vectors
     qs = calc_cif_qs(cif)
 
-    correl_vec_indices = np.where(qs[:,3] < qmax)[0]
+    # get indices where q is les then qmax
+    correl_vec_indices = np.where(qs[:, 3] < qmax)[0]
 
-    qs= qs[correl_vec_indices]
+    # remove scattering vectors with magnitude less then qmax
+    qs = qs[correl_vec_indices]
 
+    # init the correlation and historgrams
     correl = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
     hist = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
 
-
-
+    # for every scattering vector
     for i, q in enumerate(qs):
         print(f'Correlating vector {i}/{len(qs)}. q={q[:3]}')
-        q_ind = int(round((q[3]/float(qmax))*(nQ-1)))
+        # find the position of this vector in the correlation matrix
+        q_ind = int(round((q[3] / float(qmax)) * (nQ - 1)))
+
+        #for every other scattering vector
         for q_prime in qs:
-            q_prime_ind = int(round((q_prime[3]/float(qmax))*(nQ-1)))
 
+            # find the position of this vector in the correlation matrix
+            q_prime_ind = int(round((q_prime[3] / float(qmax)) * (nQ - 1)))
+
+            # find the angle between the two vectors
             theta = np.degrees(angle_between(q[:3], q_prime[:3]))
-            theta_ind = int(round((theta/180.0)*(nTheta-1)))
 
-            correl[q_ind, q_prime_ind, theta_ind] += q[6]*q[6]
-            hist[q_ind, q_prime_ind, theta_ind]+=1
+            # find the position of this angle in the correlation matrix
+            theta_ind = int(round((theta / 180.0) * (nTheta - 1)))
 
+            # correlate the vectors intensity, add ths value into the matrix
+            correl[q_ind, q_prime_ind, theta_ind] += q[6] * q[6]
+
+            # add one to the histogram
+            hist[q_ind, q_prime_ind, theta_ind] += 1
 
     return correl, hist
 
@@ -228,67 +246,12 @@ if __name__ == '__main__':
 
     ppu.plot_map(np.sum(hist, axis=0))
     ppu.save_tiff(np.sum(hist, axis=0), 'hist_no_conv')
-    convol_hist = ppu.convolve_3D_gaussian(hist, 0.5,0.5,0.5, 9)
+    convol_hist = ppu.convolve_3D_gaussian(hist, 0.5, 0.5, 0.5, 9)
     ppu.plot_map(np.sum(convol_hist, axis=0))
     ppu.save_tiff(np.sum(convol_hist, axis=0), 'hist_conv')
 
     ppu.plot_map(np.sum(correl, axis=0))
     ppu.save_tiff(np.sum(correl, axis=0), 'correl_no_conv')
-    convol_correl = ppu.convolve_3D_gaussian(correl, 0.5,0.5,0.5, 9)
+    convol_correl = ppu.convolve_3D_gaussian(correl, 0.5, 0.5, 0.5, 9)
     ppu.plot_map(np.sum(convol_correl, axis=0))
     ppu.save_tiff(np.sum(convol_correl, axis=0), 'correl_conv')
-
-    # x,y,z = np.where(hist!=0)
-    #
-    #
-    # fig = plt.figure()
-    # Axes3D(fig).scatter(x,y,z)
-    # plt.show()
-
-
-
-
-
-
-    # cif_path = Path('cifs')
-    #
-    #
-    # proteins=[('CypA', '4yug'),]
-    #
-    #
-    #
-    # res_num = [16, 8]
-    #
-    # # Read in Cif file
-    # for protein in proteins:
-    #     for res in res_num:
-    #
-    #         fname = f'{protein[1]}-sf_res{res}.cif'
-    #         protein_path = cif_path /protein[0] /fname
-    #
-    #         print(protein_path)
-    #
-    #
-    #         print('Reading Cif')
-    #         sf_cif = CifFile.ReadCif(str(protein_path))
-    #
-    #
-    #         print(f'STARTING NEW - {fname} {res}')
-    #
-    #         qmax=0.22
-    #         correl, hist = correlate(sf_cif, 0.001,  0.5, q_bounds=[0,qmax])
-    #
-    #         #correl, hist, qmax = correlate(sf_cif, dq,  0.5)
-    #
-    #         correl = ppu.convolve_gaussian(correl, 3,3)
-    #
-    #         ppu.save_dbin(correl, name=f'{protein_path.stem}')
-    #         ppu.save_tiff(correl.astype(np.int32),f'{protein_path.stem}')
-    #
-    #
-    #         ppu.plot_map(correl,title=f'correl {fname}, res {res}, qmax {qmax}', extent=[0,180, qmax,0], save=f'{protein_path.stem}.tiff')
-    #
-    #
-    #
-    #         print('\n\n\n')
-    #
