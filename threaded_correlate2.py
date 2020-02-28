@@ -77,17 +77,6 @@ def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks):
 
     return correl, hist
 
-    # threads = [None] *nChunks
-    #
-    # for chunk_i in range(nChunks):
-    #     print(chunk_i)
-    #     q_primes = qs[chunk_bounds[chunk_i][0]:chunk_bounds[chunk_i][1]]
-    #     threads[chunk_i] = threading.Thread(target=correlate_worker, args=(qs,q_primes, hist, nQ,nTheta, qmax, chunk_i))
-    #     threads[chunk_i].start()
-
-
-    # for chunk_i in range(nChunks):
-    #     threads[chunk_i].join()
 
 
 
@@ -106,12 +95,23 @@ if __name__ == '__main__':
     sf_cif = CifFile.ReadCif(str(prot_path))
 
     start = time.time()
-    correl, hist = full_correlate_threaded(sf_cif, 150,360, 0.1, 4)
+    correl, hist = full_correlate_threaded(sf_cif, 150,360, 0.05, 4)
     print(f'time taken {time.time() - start}')
 
-    ppu.plot_map(np.sum(hist, axis=0))
 
-    ppu.save_tiff(np.sum(correl, axis=0), 'threaded')
+    ppu.plot_map(np.sum(hist, axis=0))
+    ppu.save_tiff(np.sum(hist, axis=0), 'hist_no_conv_thread')
+    convol_hist = ppu.convolve_3D_gaussian(hist, 0.5,0.5,0.5, 9)
+    ppu.plot_map(np.sum(convol_hist, axis=0))
+    ppu.save_tiff(np.sum(convol_hist, axis=0), 'hist_conv_thread')
+
+    ppu.plot_map(np.sum(correl, axis=0))
+    ppu.save_tiff(np.sum(correl, axis=0), 'correl_no_conv_thread')
+    convol_correl = ppu.convolve_3D_gaussian(correl, 0.5,0.5,0.5, 9)
+    ppu.plot_map(np.sum(convol_correl, axis=0))
+    ppu.save_tiff(np.sum(convol_correl, axis=0), 'correl_conv_thread')
+
+
     # ppu.plot_map(np.sum(correl, axis=1))
     # ppu.plot_map(np.sum(correl, axis=2))
     #

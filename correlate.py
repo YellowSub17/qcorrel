@@ -223,14 +223,20 @@ if __name__ == '__main__':
 
     sf_cif = CifFile.ReadCif(str(prot_path))
     start = time.time()
-    correl, hist = full_correlate(sf_cif, 150, 360, 0.1)
+    correl, hist = full_correlate(sf_cif, 150, 360, 0.05)
     print(f'time taken {time.time() - start}')
 
     ppu.plot_map(np.sum(hist, axis=0))
-    ppu.save_tiff(np.sum(correl, axis=0), 'not_threaded')
+    ppu.save_tiff(np.sum(hist, axis=0), 'hist_no_conv')
+    convol_hist = ppu.convolve_3D_gaussian(hist, 0.5,0.5,0.5, 9)
+    ppu.plot_map(np.sum(convol_hist, axis=0))
+    ppu.save_tiff(np.sum(convol_hist, axis=0), 'hist_conv')
 
-    # ppu.plot_map(np.sum(hist, axis=1))
-    # ppu.plot_map(np.sum(hist, axis=2))
+    ppu.plot_map(np.sum(correl, axis=0))
+    ppu.save_tiff(np.sum(correl, axis=0), 'correl_no_conv')
+    convol_correl = ppu.convolve_3D_gaussian(correl, 0.5,0.5,0.5, 9)
+    ppu.plot_map(np.sum(convol_correl, axis=0))
+    ppu.save_tiff(np.sum(convol_correl, axis=0), 'correl_conv')
 
     # x,y,z = np.where(hist!=0)
     #

@@ -45,6 +45,7 @@ def save_dbin(data, name='DBIN'):
     f.close()
 
 
+
 def array_shift(array, xshift=0, yshift=0):
     ###### Gaussian Convolution Functions by AM
     # shift - a 2D version of numpy's roll
@@ -92,3 +93,27 @@ def convolve_gaussian(image, rad=3, rady=1):
     fimage = np.fft.fft2(image)
     output = np.real(np.fft.ifft2(np.conjugate(fc) * fimage))
     return output
+
+
+
+
+def convolve_3D_gaussian(vol, wx, wy, wz, filter_size = 9):
+    from scipy import ndimage
+    xx,yy,zz = np.meshgrid(np.linspace(-wx,wx,filter_size), np.linspace(-wy,wy,filter_size),np.linspace(-wz,wz,filter_size))
+    filter = np.exp(-xx**2 - yy**2 - zz**2)/(np.sqrt(2*np.pi)**3)
+    filter -=np.min(filter)
+    filter /= np.max(filter)
+
+    new_vol = ndimage.convolve(vol, filter, mode='constant', cval=0.0)
+
+    return new_vol
+
+
+if __name__ =='__main__':
+    filter = convolve_3D_gaussian(1,1,1,1, filter_size=10)
+
+    print(filter.shape)
+    plot_map(filter[:,0,:])
+
+
+
