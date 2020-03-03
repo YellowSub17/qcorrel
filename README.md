@@ -2,25 +2,25 @@
 
 Repo for diffraction intensity correlations in Qspace.
 
-##File Outline
+## File Outline
 
-###AM_inten_correl
+### AM_inten_correl
 Original qspace correlation script by Andrew Martin
 
-###correlate
+### correlate
 My version on correlation script
 
-###edit_cif
+### edit_cif
 Util module for editing cif files
 
-###padf_plug
+### padf_plug
 Util module for connecting to padfpy (Complied only on Linux OS)
 
-###plot_and_process_utils
+### plot_and_process_utils
 Util module for plotting correlations
 
-###Rfactors
+### Rfactors
 Util module for determining errors and differences between correlations
 
-###symmetry
+### symmetry
 Util module for applying symmetry operations of hkl reflections
