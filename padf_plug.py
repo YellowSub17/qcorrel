@@ -5,8 +5,8 @@ if __name__== '__main__':
     import os
     import sys
 
-    sys.path.append('/home/pat/rmit-onedrive/phd/python_projects')
-    from email_alert.alert import alert
+    # sys.path.append('/home/pat/rmit-onedrive/phd/python_projects')
+    # from email_alert.alert import alert
 
     
 
