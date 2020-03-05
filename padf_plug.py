@@ -5,32 +5,34 @@ if __name__== '__main__':
     import os
     import sys
 
-    # sys.path.append('/home/pat/rmit-onedrive/phd/python_projects')
-    # from email_alert.alert import alert
+    sys.path.append('/home/pat/rmit-onedrive/phd/python_projects')
+    from email_alert.alert import alert
 
     
 
     qcorrel_dbins_path = Path('/home/pat/rmit-onedrive/phd/python_projects/Qcorrel/dbins/')
     padf_path = Path('/home/pat/rmit-onedrive/phd/python_projects/py3padf02/padf/')
 
-    dbins = os.listdir(str(qcorrel_dbins_path))
+
+    dbins = []
+    dbins.append('4zry-sf_res8_qcorrel.dbin')
+
+    nQ = 150
+    nTheta = 180
+    qmax = 0.2
+
 
     for dbin in dbins:
-    #for i in range(1):
-        #dbin = dbins[i]
-        print(dbin)
+
+            
         qcorrelation_path = qcorrel_dbins_path /dbin
     
         fname = qcorrelation_path.stem
     
         
-        pdb_code, nQ, nTheta, qmax = fname.split('-')
     
-        nQ = nQ[2:]
-        nTheta = nTheta[2:]
-        qmax = qmax[2:]
-    
-    
+
+
         config_file = open(str(padf_path /"config.txt"), 'w')
     
         config_file.write(f'correlationfile = {str(qcorrelation_path)}\n\n')
@@ -60,7 +62,7 @@ if __name__== '__main__':
     
         config_file.close()
     
-        #os.system(f'cd {padf_path}')
+        os.system(f'cd {padf_path}')
         os.system(f'cd {padf_path}')
         cmd = f'{padf_path}/padf {padf_path/"config.txt"}'
     
@@ -69,7 +71,7 @@ if __name__== '__main__':
         stream = os.popen(f'rm {padf_path/"output"/"*r_vs_l*"}')
         
    
-    alert(sub='CODE FINISHED', msg='THe code has finished running.')
+    alert(sub='PADF correlation finished', msg='THe code has finished running.')
 
 
 

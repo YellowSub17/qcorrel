@@ -4,6 +4,7 @@ import numpy as np
 
 #http://pmsl.planet.sci.kobe-u.ac.jp/~seto/?page_id=37&lang=en
 HM_NUMBER_DICT = {
+    'I 2 2 2': 123,
     'P 1': 1,
     'P 21 21 21': 115,
     'P 21 21 2': 112,
@@ -16,6 +17,8 @@ HM_NUMBER_DICT = {
     'I 1 2 1': 11,
     "P 41 21 2": 369,
     "P 41 2 2": 368,
+    "P 1 21 1":6,
+    "I 41 2 2": 375,
 }
 
 

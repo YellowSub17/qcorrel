@@ -21,6 +21,22 @@ def plot_map(map, title='', save=None, cmap='plasma', extent=None,
         plt.savefig(str(save_path))
         plt.close(plt.gcf().number)
 
+
+
+def plot_r1r2map(map, title='', save=None, cmap='plasma', extent=None,
+        xlabel = 'Correlation Angle $\Delta$ [Degrees]', ylabel= 'Correlation distance $r_1=r_2$ [$\AA$]'):
+
+    plt.figure()
+    plt.title(title)
+    plt.imshow(map, cmap=cmap, aspect='auto', extent=extent)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.colorbar()
+    if type(save)==str:
+        save_path = Path('saved_plots') / f'{save}.png'
+        plt.savefig(str(save_path))
+
+
 def save_tiff(im, name="IMAGE"):
 
     if name[-4:]=='tiff':
@@ -137,102 +153,37 @@ if __name__ =='__main__':
     
 
 
-
-
-
-
-
-
-    pdb_code = '4yug'
-    nQ =150 
-    nTheta = 360
-    qmax = 1.25
+    padf_out_path = Path('/home/pat/rmit-onedrive/phd/python_projects/py3padf02/padf/output')
+    dbins = []
     
-    rmax=(nQ*1e-10)/(2*qmax)*1e9
-    fname = f'{pdb_code}-nq{nQ}-nt{nTheta}-qm{qmax}_padf.dbin'
-    
-    path_to_file = Path(f'/home/pat/rmit-onedrive/phd/python_projects/py3padf02/padf/output/') /fname
-   
-    arr = read_dbin(str(path_to_file), nQ,nTheta)
-    
-
-
-    r1r2map1 = extract_r1r2(arr)
-
-    
-    plot_map(r1r2map1, extent=[0,180, rmax, 0], ylabel='Correlation Distance $r_1$ [nm]',title='4yug')
-    
-    pdb_code = '4yum'
-    nQ =150 
-    nTheta = 360
-    qmax = 1.25
-    
-    rmax=(nQ*1e-10)/(2*qmax)*1e9
-    fname = f'{pdb_code}-nq{nQ}-nt{nTheta}-qm{qmax}_padf.dbin'
-    
-    path_to_file = Path(f'/home/pat/rmit-onedrive/phd/python_projects/py3padf02/padf/output/') /fname
-   
-    arr = read_dbin(str(path_to_file), nQ,nTheta)
-    
-
-
-    r1r2map2 = extract_r1r2(arr)
-
-    
-    plot_map(r1r2map2, extent=[0,180, rmax, 0], ylabel='Correlation Distance $r_1$ [nm]',title='4YUM')
-    
-    
-    #plot_map(arr[35,:,:], extent=[0, 180, rmax, 0], ylabel= 'Correlation Distance $r_1$ [nm]', title='$r_1 = index 35$')
-    #plot_map(arr[36,:,:],  extent=[0, 180, rmax, 0], ylabel = 'Correlation Distance $r_1$ [nm]', title='$r_1 = index 36$')
-
-    #plot_map(arr[:,:,75], extent=[0, rmax, rmax, 0],ylabel= 'Correlation Distance $r_1$ [nm]', xlabel= 'Correlation Distance $r_1$ [nm]',title='$\Delta = index 75$')
-    #plot_map(arr[:,:,76], extent=[0, rmax, rmax, 0],ylabel= 'Correlation Distance $r_1$ [nm]', xlabel= 'Correlation Distance $r_1$ [nm]',title='$\Delta = index 76$')
-
-    
-    #plt.figure()
-    #plt.plot(np.linspace(0, rmax, nQ),arr[:,45,6])
-    #plt.xlabel('Correlation Distance $r_2$ [nm]')
-    #plt.ylabel('Correlation Intensity')
-    #plt.title('$\Delta =90^o$, $r_1 = 5 [nm]$')
-
-    
-    #plt.figure()
-    #plt.plot(np.linspace(0, 180, nTheta), arr[2,2,:])
-    #plt.xlabel('Correlation Angle $\Delta$ [Degrees]')
-    #plt.ylabel('Correlation Intensity')
-
-    #plt.title('$r_1 =2.5 [nm]$, $r_2 = 2.5 [nm]$')
-
-
-
-    diff = r1r2map2 - r1r2map1
-    plot_map(diff, extent=[0,180, rmax, 0], ylabel='Correlation Distance $r_1$ [nm]',title='diff')
-    
-
-
-    degree= 80
-    plt.figure()
-    plt.title(f'R1=R2, linplot through $\Delta={degree}$')
-    plt.plot(np.linspace(0, rmax, nQ),r1r2map1[:,degree], label='4yug')
-    plt.plot(np.linspace(0, rmax, nQ),r1r2map2[:,degree], label=pdb_code)
-    plt.plot(np.linspace(0, rmax, nQ),diff[:,degree], label='diff')
-    plt.xlabel('Correlation distance R1=R2 [nm]')
-    plt.legend()
-    
-
-
-    rind =9 
-    plt.figure()
-    plt.plot(np.linspace(0, 180, nTheta),r1r2map1[rind,:], label='4yug')
-    plt.plot(np.linspace(0, 180, nTheta),r1r2map2[rind,:], label=pdb_code)
-    plt.plot(np.linspace(0, 180, nTheta),diff[rind,:], label='diff')
-    plt.xlabel('Corelation angle [degrees]')
-    plt.legend()
-
+    dbins.append(padf_out_path / '1cos-sf_res4_qcorrel_padf.dbin')
 
 
     
+    
+    nQ = 150
+    qmax = 0.08
+    nTheta = 180 
+    rmax =(nQ*1e-10)/(2*qmax)*1e9
+
+
+    r_scale = np.linspace(0, rmax, nQ)**2
+    theta_scale = np.linspace(0, 180, nTheta)
+
+    tt,rr = np.meshgrid(theta_scale, r_scale)
+
+    
+
+    rcrop_ind =0
+    for dbin in dbins:
+        arr = read_dbin(str(dbin), nQ, nTheta)
+
+        r1r2map = extract_r1r2(arr)
+        
+        plot_map(r1r2map[rcrop_ind:,:]*rr[rcrop_ind:,:], extent=[0,nTheta,rmax, r_scale[rcrop_ind]])
+        plt.figure()
+        plt.plot(np.linspace(0,180,nTheta), r1r2map[10, :]/np.max(r1r2map[10,:]))
     plt.show()
-
+    
 
 

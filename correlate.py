@@ -260,12 +260,17 @@ def correlate_chunk_worker(inputs):
     return chunk_correl, chunk_hist
 
 
+
+
+
 def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks=4):
     '''
     Produce a 3D correlation volume of the scattering vectors within a CIF file. nQ and qmax specify the resolution in
     qspace, ntheta defines the angular resolution (theta max locked at 180). Threaded for speed.
     nChunks defines the how the correlation volume is split up (defualt 4, for a quad core cpu)
     '''
+
+
 
     # get the scattering vectors
     qs = calc_cif_qs(cif)
@@ -327,50 +332,79 @@ def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks=4):
 
 
 
+def write_log(path, **kwargs):
+
+    f=open(path, 'w')
+    for kw in kwargs:
+        f.write(f'{kw} = {kwargs[kw]}\n\n' )
+    f.close()
+
+
 if __name__ == '__main__':
     import CifFile
     import plot_and_process_utils as ppu
     import time
-    import os
     import sys
+    import os
 
-    sys.path.append('/home/pat/rmit-onedrive/phd/python_projects')
+    sys.path.append(str(Path(os.getcwd()).parent))
+
     from email_alert.alert import alert
 
 
-    try:
-        base_path = Path('cifs/CypA')
     
-        cifs = [ '4yug', '4yuh', '4yui', '4yuj', '4yuk', '4yul', '4yum']
-        nqs=[150]
-        nts=[360]
-        qmaxs=[0.25]
-        ress = [4]
-    
-    
-        for cif in cifs:
-            for res in ress:
-    
-                fname = f'{cif}-sf_res{res}.cif'
-        
-                prot_path = base_path / fname
-                print(f'Reading {fname}')
-                sf_cif = CifFile.ReadCif(str(prot_path))
-                
-                for nq in nqs:
-                    for nt in nts:
-                        for qmax in qmaxs:
-                            start = time.time()
-                            correl, hist = full_correlate_threaded(sf_cif, nq,nt, qmax)
-                            print(f'time taken {time.time() - start}')
-        
-                            convol_correl = ppu.convolve_3D_gaussian(correl, 5,5,5, 9)
-                            ppu.save_tiff(np.sum(convol_correl, axis=0), 'correl_conv')
-        
-                            dbin_fname = f"{cif}_res{res}-nq{nq}-nt{nt}-qm{str(qmax)}"
-                            ppu.save_dbin(convol_correl,dbin_fname)
-        
-        alert()
-    except:
-        alert(sub='ERROR')
 
+
+
+
+    base_path = Path('cifs/alpha/keratin')
+
+
+   #proteins = [#'1al1',
+   #            '1cos',
+   #            '1mft',
+   #            '3hf0',
+   #            '102l',
+   #            '115l'
+   #            ]
+
+
+    cif_file_names = []
+
+   #for protein in proteins:
+    cif_file_names.append(base_path / '4zry-sf_res8.cif')
+
+
+
+    nq=150
+    nt=180
+    qmax=0.2
+
+    convolve_wxyz = 5
+    convolve_size=9
+
+
+    for cif in cif_file_names:
+
+        print(f'Reading {cif}')
+        sf_cif = CifFile.ReadCif(str(cif))
+
+        start = time.time()
+        correl, hist = full_correlate_threaded(sf_cif, nq,nt, qmax,nChunks=4)
+        print(f'time taken {time.time() - start}')
+
+
+
+        convol_correl = ppu.convolve_3D_gaussian(correl, convolve_wxyz,convolve_wxyz,convolve_wxyz, convolve_size)
+
+        dbin_fname = str(cif.stem+'_qcorrel')
+
+
+        ppu.save_dbin(convol_correl,dbin_fname)
+
+        log_fname=str(Path('dbins')/  f'{dbin_fname}_log.txt')
+        write_log(log_fname, cif=cif, nQ=nq, nTheta=nt, qmax=qmax, convolve_wxyz=convolve_wxyz, convolve_size=convolve_size)
+
+    alert(sub='Correlation Done')
+
+        
