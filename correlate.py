@@ -43,12 +43,16 @@ def get_cif_reflections(cif):
     # read in inten, but also remove ? marks (assume low intensity, 0)
     try:
         inten_meas = cif[cif.visible_keys[0]]['_refln.intensity_meas']
+        inten_meas = np.array(inten_meas)
+        inten_meas = np.where(inten_meas == '?', '0', inten_meas)
+        inten_meas = np.array([float(inten) for inten in inten_meas])
     except KeyError:
         inten_meas = cif[cif.visible_keys[0]]['_refln.F_meas_au']
+        inten_meas = np.array(inten_meas)
+        inten_meas = np.where(inten_meas == '?', '0', inten_meas)
+        inten_meas = np.array([float(inten)**2 for inten in inten_meas])
 
-    inten_meas = np.array(inten_meas)
-    inten_meas = np.where(inten_meas == '?', '0', inten_meas)
-    inten_meas = np.array([float(inten) for inten in inten_meas])
+
 
     # init the list of reflections
     reflections = np.zeros((len(h_refl), 4))
@@ -241,11 +245,11 @@ def correlate_chunk_worker(inputs):
 
     # init the volume for just this chunk
     chunk_correl = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
-    chunk_hist = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
+    #chunk_hist = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
 
     # correlat the vectors as in the other functions.
     for q_i, q in enumerate(qs):
-        if q_i%100==0:
+        if q_i%400==0:
             print(f'Correlating vector {q_i}/{len(qs)}. q={q[:3]}')
         q_ind = int(round(((nQ - 1) * (q[3] / qmax))))
 
@@ -255,9 +259,9 @@ def correlate_chunk_worker(inputs):
             theta_ind = int(round((theta / 180.0) * (nTheta - 1)))
 
             chunk_correl[q_ind, q_prime_ind, theta_ind] += q[6] * q_prime[6]
-            chunk_hist[q_ind, q_prime_ind, theta_ind] += 1
+            #chunk_hist[q_ind, q_prime_ind, theta_ind] += 1
 
-    return chunk_correl, chunk_hist
+    return chunk_correl#, chunk_hist
 
 
 
@@ -284,7 +288,7 @@ def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks=4):
 
     # init the correlation and historgrams
     correl = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
-    hist = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
+    #hist = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
 
     # if the number of correlating vectors is not divisbile by the number of
     # chunks, work out how many are left over. Also work out how big each normal chunk is
@@ -326,18 +330,26 @@ def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks=4):
         # for each result, sum them together
         for f in concurrent.futures.as_completed(results):
             correl += f.result()[0]
-            hist += f.result()[1]
+            #hist += f.result()[1]
 
-    return correl, hist
+    return correl#, hist
 
 
 
-def write_log(path, **kwargs):
+def print_qmax(cif ):
+    '''
+    Produce a 3D correlation volume of the scattering vectors within a CIF file. nQ and qmax specify the resolution in
+    qspace, ntheta defines the angular resolution (theta max locked at 180). Threaded for speed.
+    nChunks defines the how the correlation volume is split up (defualt 4, for a quad core cpu)
+    '''
 
-    f=open(path, 'w')
-    for kw in kwargs:
-        f.write(f'{kw} = {kwargs[kw]}\n\n' )
-    f.close()
+
+    # get the scattering vectors
+    qs = calc_cif_qs(cif)
+
+    # get indices where q is les then qmax
+    print(f'Max q: {np.max(qs[:,3])}')
+
 
 
 if __name__ == '__main__':
@@ -351,60 +363,66 @@ if __name__ == '__main__':
 
     from email_alert.alert import alert
 
-
-    
-
-
-
-
-    base_path = Path('cifs/alpha/keratin')
+    named_tuple = time.localtime() # get struct_time
+    time_string = time.strftime("%H:%M:%S", named_tuple)
+    alert(sub=f'Starting correlation at time: {time_string}')
 
 
-   #proteins = [#'1al1',
-   #            '1cos',
-   #            '1mft',
-   #            '3hf0',
-   #            '102l',
-   #            '115l'
-   #            ]
-
+    base_path = Path('cifs/alpha')
 
     cif_file_names = []
 
-   #for protein in proteins:
-    cif_file_names.append(base_path / '4zry-sf_res8.cif')
+    #for protein in proteins:
+    cif_file_names.append(base_path / '1cos-sf.cif')
+
+    cif_file_names.append(base_path / '1mft-sf.cif')
+
+    cif_file_names.append(base_path / '6q5j-sf.cif')
+
+    cif_file_names.append(base_path /'keratin' /'6jfv-sf.cif')
+    cif_file_names.append(base_path / 'keratin' /'6uui-sf.cif')
+
+    cif_file_names.append(base_path / '4osd-sf.cif')
 
 
 
     nq=150
-    nt=180
-    qmax=0.2
+    nt=360
+    qmax=0.3
 
-    convolve_wxyz = 5
-    convolve_size=9
+    try:
+        for cif in cif_file_names:
 
-
-    for cif in cif_file_names:
-
-        print(f'Reading {cif}')
-        sf_cif = CifFile.ReadCif(str(cif))
-
-        start = time.time()
-        correl, hist = full_correlate_threaded(sf_cif, nq,nt, qmax,nChunks=4)
-        print(f'time taken {time.time() - start}')
+            print(f'Reading {cif}')
+            sf_cif = CifFile.ReadCif(str(cif))
 
 
-
-        convol_correl = ppu.convolve_3D_gaussian(correl, convolve_wxyz,convolve_wxyz,convolve_wxyz, convolve_size)
-
-        dbin_fname = str(cif.stem+'_qcorrel')
+            #print_qmax(sf_cif)
 
 
-        ppu.save_dbin(convol_correl,dbin_fname)
+            start = time.time()
+            correl = full_correlate_threaded(sf_cif, nq,nt, qmax,nChunks=4)
+            print(f'time taken {time.time() - start}')
 
-        log_fname=str(Path('dbins')/  f'{dbin_fname}_log.txt')
-        write_log(log_fname, cif=cif, nQ=nq, nTheta=nt, qmax=qmax, convolve_wxyz=convolve_wxyz, convolve_size=convolve_size)
 
-    alert(sub='Correlation Done')
 
-        
+
+            dbin_fname = str(cif.stem+'_qcorrel')
+
+
+            ppu.save_dbin(correl,dbin_fname)
+
+            log_fname=str(Path('dbins')/  f'{dbin_fname}_log.txt')
+            ppu.write_log(log_fname, cif=cif, nQ=nq, nTheta=nt, qmax=qmax )
+
+            named_tuple = time.localtime() # get struct_time
+            time_string = time.strftime("%H:%M:%S", named_tuple)
+            alert(msg=f'Correlated {cif.stem} at time: {time_string}')
+
+        named_tuple = time.localtime() # get struct_time
+        time_string = time.strftime("%H:%M:%S", named_tuple)
+        alert(sub=f'Finish correlation at time: {time_string}')
+
+    except:
+        alert(sub='CODE HIT ERROR!')
+

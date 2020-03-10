@@ -19,6 +19,9 @@ HM_NUMBER_DICT = {
     "P 41 2 2": 368,
     "P 1 21 1":6,
     "I 41 2 2": 375,
+    "P 42 21 2": 371,
+    "P 41": 350,
+    "P 61 2 2": 472
 }
 
 
@@ -366,7 +369,6 @@ def apply_sym(reflections, spg_code):
 
 
 
-x = three_bar_m()
 
 
 

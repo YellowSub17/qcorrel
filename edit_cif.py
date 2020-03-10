@@ -250,7 +250,7 @@ if __name__=="__main__":
 
 
 
-    cif_path = Path('cifs/alpha/keratin')
+    cif_path = Path('cifs/alpha')
     proteins = ['3tnu',
                 '4zry',
                 '6e2j',
@@ -259,34 +259,6 @@ if __name__=="__main__":
                 ]
 
 
-
-
-
-#   proteins = ['1al1',
-#               '1cos',
-#               '1mft',
-#               '3hf0',
-#               '102l',
-#               '115l'
-#               ]
-
-    # proteins = [('CypA', '4yug'),
-    #             ('CypA', '4yuh'),
-    #             ('CypA', '4yui'),
-    #             ('CypA', '4yuj'),
-    #             ('CypA', '4yuk'),
-    #             ('CypA', '4yul'),
-    #             ('CypA', '4yum'),
-    #
-    #             ('GFP', '2b3p'),
-    #             ('GFP', '2q6p'),
-    #             ('GFP', '4lqt'),
-    #             ('GFP', '5z6y'),
-    #             ('GFP', '6b9c'),
-    #
-    #             ('Lyso', '253l'),
-    #             ('Lyso', '254l')
-    #             ]
     
     ####INCREASEING ORDER!!
     resolutions = [16,8,4]

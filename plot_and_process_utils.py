@@ -17,7 +17,7 @@ def plot_map(map, title='', save=None, cmap='plasma', extent=None,
     plt.ylabel(ylabel)
     plt.colorbar()
     if type(save)==str:
-        save_path = Path('saved_plots') / f'{save}.png'
+        save_path = f'{save}.png'
         plt.savefig(str(save_path))
         plt.close(plt.gcf().number)
 
@@ -33,7 +33,7 @@ def plot_r1r2map(map, title='', save=None, cmap='plasma', extent=None,
     plt.ylabel(ylabel)
     plt.colorbar()
     if type(save)==str:
-        save_path = Path('saved_plots') / f'{save}.png'
+        save_path = f'{save}.png'
         plt.savefig(str(save_path))
 
 
@@ -148,6 +148,13 @@ def convolve_3D_gaussian(vol, wx, wy, wz, filter_size = 9):
 
     return new_vol
 
+def write_log(path, **kwargs):
+
+    f=open(path, 'w')
+    f.write('## Q space correlation log\n\n')
+    for kw in kwargs:
+        f.write(f'{kw} = {kwargs[kw]}\n\n' )
+    f.close()
 
 if __name__ =='__main__':
     

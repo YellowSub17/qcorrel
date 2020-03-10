@@ -14,28 +14,40 @@ if __name__== '__main__':
     padf_path = Path('/home/pat/rmit-onedrive/phd/python_projects/py3padf02/padf/')
 
 
+
+
+
+
     dbins = []
-    dbins.append('4zry-sf_res8_qcorrel.dbin')
+    dbins.append(qcorrel_dbins_path / '1cos-sf_qcorrel.dbin')
+
+
+    dbins.append(qcorrel_dbins_path / '1mft-sf_qcorrel.dbin')
+
+
+    dbins.append(qcorrel_dbins_path / '6q5j-sf_qcorrel.dbin')
+
+
+    dbins.append(qcorrel_dbins_path /'6jfv-sf_qcorrel.dbin')
+    dbins.append(qcorrel_dbins_path / '6uui-sf_qcorrel.dbin')
+    dbins.append(qcorrel_dbins_path / '4osd-sf_qcorrel.dbin')
+
 
     nQ = 150
-    nTheta = 180
-    qmax = 0.2
+    nTheta = 360
+    qmax = 0.3
 
 
     for dbin in dbins:
 
             
-        qcorrelation_path = qcorrel_dbins_path /dbin
-    
-        fname = qcorrelation_path.stem
-    
-        
-    
 
+        fname = dbin.stem
+    
 
         config_file = open(str(padf_path /"config.txt"), 'w')
     
-        config_file.write(f'correlationfile = {str(qcorrelation_path)}\n\n')
+        config_file.write(f'correlationfile = {str(dbin)}\n\n')
         config_file.write(f'outpath = {str(padf_path/"output")}\n\n')
     
         config_file.write(f'wavelength = 1e-10\n\n')
@@ -67,11 +79,11 @@ if __name__== '__main__':
         cmd = f'{padf_path}/padf {padf_path/"config.txt"}'
     
         os.system(cmd)
-        stream = os.popen(f'rm {padf_path/"output"/"*bl*"}')
-        stream = os.popen(f'rm {padf_path/"output"/"*r_vs_l*"}')
+        stream1 = os.popen(f'rm {padf_path/"output"/"*bl*"}')
+        stream2 = os.popen(f'rm {padf_path/"output"/"*r_vs_l*"}')
         
    
-    alert(sub='PADF correlation finished', msg='THe code has finished running.')
+    alert(sub='PADF correlation finished')
 
 
 
