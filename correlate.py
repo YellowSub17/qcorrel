@@ -83,20 +83,39 @@ def calc_cif_qs(cif):
 
     qs = np.zeros((reflections.shape[0], 7), dtype=np.float64)
 
+
+
+    alpha =np.radians(float(cif[cif.visible_keys[0]]['_cell.angle_alpha']))
+
+    beta = np.radians(float(cif[cif.visible_keys[0]]['_cell.angle_beta']))
+    gamma =np.radians(float(cif[cif.visible_keys[0]]['_cell.angle_gamma']))
+
+
+
+    a_unit =   np.array([1, 0, 0], dtype=np.float64)
+
+    b_unit =   np.array([np.cos(gamma),np.sin(gamma) , 0], dtype=np.float64)
+
+    c_unit =   np.array([   np.cos(beta),
+                           (np.cos(alpha)-np.cos(beta)*np.cos(gamma))/np.sin(gamma),
+                            np.sqrt( 1 - np.cos(beta)**2 -  ( (np.cos(alpha)-np.cos(beta)*np.cos(gamma))/np.sin(gamma))**2 ) ]
+        , dtype=np.float64)
+
     # get cell paraments to make a,b,c
-    a_len = float(cif[cif.visible_keys[0]]['_cell.length_a']) * np.array([1, 0, 0], dtype=np.float64)
-    b_len = float(cif[cif.visible_keys[0]]['_cell.length_b']) * np.array([0, 1, 0], dtype=np.float64)
-    c_len = float(cif[cif.visible_keys[0]]['_cell.length_c']) * np.array([0, 0, 1], dtype=np.float64)
+    a = float(cif[cif.visible_keys[0]]['_cell.length_a'])*a_unit
+    b = float(cif[cif.visible_keys[0]]['_cell.length_b'])*b_unit
+    c = float(cif[cif.visible_keys[0]]['_cell.length_c'])*c_unit
+
 
     # calculate a*, b*, c*
-    ast_len = np.cross(b_len, c_len) / np.dot(a_len, np.cross(b_len, c_len))
-    bst_len = np.cross(a_len, c_len) / np.dot(a_len, np.cross(b_len, c_len))
-    cst_len = np.cross(a_len, b_len) / np.dot(a_len, np.cross(b_len, c_len))
+    ast = np.cross(b, c) / np.dot(a, np.cross(b, c))
+    bst = np.cross(a, c) / np.dot(a, np.cross(b, c))
+    cst = np.cross(a, b) / np.dot(a, np.cross(b, c))
 
     # for every reflection
     for i, reflection in enumerate(reflections):
         # get the magnitude of the q vector
-        q = calc_q(reflection[0], reflection[1], reflection[2], ast_len, bst_len, cst_len)
+        q = calc_q(reflection[0], reflection[1], reflection[2], ast, bst, cst)
 
         qs[i, :3] = q
         qs[i, 3] = np.sqrt(q.dot(q))
@@ -205,11 +224,13 @@ def full_correlate(cif, nQ, nTheta, qmax=0.1):
 
     # init the correlation and historgrams
     correl = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
-    hist = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
+   # hist = np.zeros((nQ, nQ, nTheta), dtype=np.float32)
 
     # for every scattering vector
     for i, q in enumerate(qs):
-        print(f'Correlating vector {i}/{len(qs)}. q={q[:3]}')
+
+        if i%400==0:
+            print(f'Correlating vector {i}/{len(qs)}. q={q[:3]}')
         # find the position of this vector in the correlation matrix
         q_ind = int(round((q[3] / float(qmax)) * (nQ - 1)))
 
@@ -229,9 +250,9 @@ def full_correlate(cif, nQ, nTheta, qmax=0.1):
             correl[q_ind, q_prime_ind, theta_ind] += q[6] * q[6]
 
             # add one to the histogram
-            hist[q_ind, q_prime_ind, theta_ind] += 1
+    #        hist[q_ind, q_prime_ind, theta_ind] += 1
 
-    return correl, hist
+    return correl#, hist
 
 
 def correlate_chunk_worker(inputs):
@@ -329,7 +350,7 @@ def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks=4):
         results = [executor.submit(correlate_chunk_worker, args) for args in all_args]
         # for each result, sum them together
         for f in concurrent.futures.as_completed(results):
-            correl += f.result()[0]
+            correl += f.result()
             #hist += f.result()[1]
 
     return correl#, hist
@@ -368,61 +389,59 @@ if __name__ == '__main__':
     alert(sub=f'Starting correlation at time: {time_string}')
 
 
-    base_path = Path('cifs/alpha')
+    base_path = Path('cifs/Lyso')
 
     cif_file_names = []
 
+    #cif_file_names.append(base_path / '253l-sf_hack.cif')
+
+    cif_file_names.append(base_path / '254l-sf_hack.cif')
     #for protein in proteins:
-    cif_file_names.append(base_path / '1cos-sf.cif')
+    # cif_file_names.append(base_path / '1cos-sf.cif')
+    #
+    # cif_file_names.append(base_path / '1mft-sf.cif')
 
-    cif_file_names.append(base_path / '1mft-sf.cif')
+   #cif_file_names.append(base_path / '6q5j-sf_res4.cif')
 
-    cif_file_names.append(base_path / '6q5j-sf.cif')
+   #cif_file_names.append(base_path /'keratin' /'6jfv-sf_res4.cif')
+   ##cif_file_names.append(base_path / 'keratin' /'6uui-sf_res4.cif')
 
-    cif_file_names.append(base_path /'keratin' /'6jfv-sf.cif')
-    cif_file_names.append(base_path / 'keratin' /'6uui-sf.cif')
-
-    cif_file_names.append(base_path / '4osd-sf.cif')
+   #cif_file_names.append(base_path / '4osd-sf_res4.cif')
 
 
 
     nq=150
     nt=360
-    qmax=0.3
-
-    try:
-        for cif in cif_file_names:
-
-            print(f'Reading {cif}')
-            sf_cif = CifFile.ReadCif(str(cif))
+    qmaxs=[0.14,0.14]
 
 
-            #print_qmax(sf_cif)
+    for cif, qmax in zip(cif_file_names, qmaxs):
+
+        # print(f'Reading {cif}')
+        sf_cif = CifFile.ReadCif(str(cif))
+
+        # print_qmax(sf_cif)
 
 
-            start = time.time()
-            correl = full_correlate_threaded(sf_cif, nq,nt, qmax,nChunks=4)
-            print(f'time taken {time.time() - start}')
-
+        start = time.time()
+        correl = full_correlate_threaded(sf_cif, nq,nt, qmax,nChunks=4)
+        print(f'time taken {time.time() - start}')
 
 
 
-            dbin_fname = str(cif.stem+'_qcorrel')
+        dbin_fname = str(cif.stem+'_qcorrel')
 
 
-            ppu.save_dbin(correl,dbin_fname)
+        ppu.save_dbin(correl,dbin_fname)
 
-            log_fname=str(Path('dbins')/  f'{dbin_fname}_log.txt')
-            ppu.write_log(log_fname, cif=cif, nQ=nq, nTheta=nt, qmax=qmax )
+        log_fname=str(Path('dbins')/  f'{dbin_fname}_log.txt')
+        ppu.write_log(log_fname, cif=cif, nQ=nq, nTheta=nt, qmax=qmax )
+        named_tuple = time.localtime()
+        time_string = time.strftime("%H:%M:%S", named_tuple)
+        alert(msg=f'Correlated {cif.stem} at time: {time_string}')
 
-            named_tuple = time.localtime() # get struct_time
-            time_string = time.strftime("%H:%M:%S", named_tuple)
-            alert(msg=f'Correlated {cif.stem} at time: {time_string}')
-
-        named_tuple = time.localtime() # get struct_time
+        named_tuple = time.localtime()
         time_string = time.strftime("%H:%M:%S", named_tuple)
         alert(sub=f'Finish correlation at time: {time_string}')
 
-    except:
-        alert(sub='CODE HIT ERROR!')
 

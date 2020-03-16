@@ -101,16 +101,76 @@ def add_err(fname, outfname, res=None, err_scale=1, tag=0):
     out_file.close()
 
 
+def comp_cif(fname1, fname2):
+
+    cif1 = CifFile.ReadCif(str(fname1))
+    cif2 = CifFile.ReadCif(str(fname2))
+
+    cif1_key = cif1.visible_keys[0]
+    cif2_key = cif2.visible_keys[0]
 
 
-def cut_hkl(fname, resolutions, outfname):
+    h1= cif1[cif1_key]['_refln.index_h']
+    h2= cif2[cif2_key]['_refln.index_h']
+
+    k1= cif1[cif1_key]['_refln.index_k']
+    k2= cif2[cif2_key]['_refln.index_k']
+
+    l1= cif1[cif1_key]['_refln.index_l']
+    l2= cif2[cif2_key]['_refln.index_l']
+
+    if '_refln.intensity_meas' in cif1[cif1_key]:
+        I_refl_orig = cif1[cif1_key]['_refln.intensity_meas']
+        I_sig_orig = cif1[cif1_key]['_refln.intensity_sigma']
+
+        for i, (I, sig) in enumerate(zip(I_refl_orig, I_sig_orig)):
+            if I=='?' or sig=='?':
+                I_refl_orig[i] = '0'
+                I_sig_orig[i] ='0'
+            else:
+                continue
+
+        I_refl_orig = np.array([float(I) for I in I_refl_orig])
+        I_sig_orig = np.array([float(sig) for sig in I_sig_orig])
+
+
+
+    if '_refln.F_meas_au' in cif[cif_key]:
+        F_refl_orig = cif[cif_key]['_refln.F_meas_au']
+        F_sig_orig = cif[cif_key]['_refln.F_meas_sigma_au']
+
+        for i, (F, sig) in enumerate(zip(F_refl_orig, F_sig_orig)):
+            if F=='?' or sig=='?':
+                F_refl_orig[i] = '0'
+                F_sig_orig[i] ='0'
+            else:
+                continue
+
+        # Conversion from F to I (check implementation?)
+        F_refl_orig = np.array([np.round((float(F))**2,3) for F in F_refl_orig])
+        F_sig_orig = np.array([np.round((float(sig))**2,3) for sig in F_sig_orig])
+
+
+
+
+
+    refl1 = [(int(h),int(k),int(l)) for h,k,l in zip(h1,k1,l1)]
+
+    refl2 = [(int(h),int(k),int(l)) for h,k,l in zip(h2,k2,l2)]
+
+    return refl1, refl2
+
+
+
+
+def cut_hkl(fname, resolutions):
     '''
     reduce the number of reflections in a CIF file fname
     if h,k or l are greater then bound, ignore this reflection
     remaining reflections are saved as outfname
     '''
     print(f'Reading Cif {fname}')
-    cif = CifFile.ReadCif(fname) # read the cif file
+    cif = CifFile.ReadCif(str(fname)) # read the cif file
 
     cif_key = cif.visible_keys[0]
 
@@ -163,10 +223,10 @@ def cut_hkl(fname, resolutions, outfname):
                 continue
 
         # Conversion from F to I (check implementation?)
-        # F_refl_orig = np.array([np.round((float(F))**2,3) for F in F_refl_orig])
-        # F_sig_orig = np.array([np.round((float(sig))**2,3) for sig in F_sig_orig])
-        F_refl_orig = np.array([float(F) for F in F_refl_orig])
-        F_sig_orig = np.array([float(sig) for sig in F_sig_orig])
+        F_refl_orig = np.array([np.round((float(F))**2,3) for F in F_refl_orig])
+        F_sig_orig = np.array([np.round((float(sig))**2,3) for sig in F_sig_orig])
+        # F_refl_orig = np.array([float(F) for F in F_refl_orig])
+        # F_sig_orig = np.array([float(sig) for sig in F_sig_orig])
 
 
 
@@ -185,7 +245,7 @@ def cut_hkl(fname, resolutions, outfname):
         new_F = []
         new_Fsig = []
 
-        q_max = 1.0/res
+        q_max = 1.0/(2*res)
 
         h_bound = int(round(a_len*q_max))
         k_bound = int(round(b_len*q_max))
@@ -233,7 +293,13 @@ def cut_hkl(fname, resolutions, outfname):
 
 
         #write the dict to file
-        out_file = open(f'{outfname}-sf_res{res}.cif', 'w')
+
+        out_fname = fname.stem+f'_res{res}.cif'
+
+        outfile = fname.parent /out_fname
+
+        print(f'Saving to:{outfile}')
+        out_file = open(str(outfile), 'w')
         out_file.write(cif.WriteOut())
         out_file.close()
 
@@ -246,43 +312,13 @@ if __name__=="__main__":
     #
     sys.path.append(str(Path(os.getcwd()).parent))
 
-    from email_alert.alert import alert
+
+    base_path = Path('cifs/cell_size')
 
 
 
-    cif_path = Path('cifs/alpha')
-    proteins = ['3tnu',
-                '4zry',
-                '6e2j',
-                '6jfv',
-                '6uui'
-                ]
+    refl1, refl2 = comp_cif(base_path/'253l-sf.cif', base_path/'254l-sf.cif' )
 
+    refl1 = set(refl1)
+    refl2 = set(refl2)
 
-    
-    ####INCREASEING ORDER!!
-    resolutions = [16,8,4]
-    #
-    #
-    ## Utility to edit cif files for less reflections
-    for protein in proteins:
-        start = time.time()
-        protien_path = cif_path / f'{protein}-sf.cif'
-        out_path = cif_path / protein
-        cut_hkl(str(protien_path),resolutions, str(out_path))
-        end = time.time()
-        print(f'Run time: {end-start} seconds.\n\n\n')
-
-    #alert(sub='CUT HKL DONE')
-
-    # for protein in proteins:
-    #     for res in resolutions:
-    #         for tag in range(2, 10):
-    #             start = time.time()
-    #             protien_path = cif_path / protein [0] / f'{protein[1]}-sf_res{res}.cif'
-    #             out_path = cif_path / 'Errors' / protein [0]/ protein[1]
-    #             add_err(str(protien_path), str(out_path), res, tag=tag)
-    #             end = time.time()
-    #             print(f'Run time: {end-start} seconds.\n\n\n')
-
-    #alert(sub='ADD HKL DONE')
