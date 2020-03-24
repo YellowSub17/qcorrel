@@ -11,89 +11,52 @@ import numpy as np
 
 
 
-padf_path = Path(os.getcwd()).parent.parent /'py3padf02'/'padf'/'output'
-
-qcorrel_path = Path(os.getcwd()).parent /'dbins'
-
-qcorrel_fname = '254l-sf_qcorrelnl20'
 
 
 
 
-nQ = 150
-qmax=0.3
+padf_path = Path(os.getcwd()).parent.parent/'py3padf02'/'padf'/ 'output'
+
+padf_fnames = ['253l-sf_ave_qcorrel_padf','254l-sf_ave_qcorrel_padf', '253l-sf_ave_comp254l-sf_ave_qcorrel_padf','254l-sf_ave_comp253l-sf_ave_qcorrel_padf']
+
+
+
+nQ = 256
+qmax=0.14
 nTheta =360
-tmax = 360
+tmax =180
+rmax = 50e-10
 
-#rmax =(nQ*1e-10)/(2*qmax)
-rmax= 50 *1e-10
 
 q_space = np.linspace(0, qmax, nQ)
-r_space = np.linspace(0,rmax,nQ)
 t_space = np.linspace(0,tmax, nTheta)
+r_space = np.linspace(0,rmax, nQ)
 
 tscale, rscale = np.meshgrid(t_space, r_space)
 
-## Real Space
-#r1r2imshow
-rvol = ppu.read_dbin(str(padf_path/f'{qcorrel_fname}_padf.dbin'), nQ, nTheta)
+for padf_fname in padf_fnames:
 
-
-#rvol=rvol*rvol
-r1r2 = ppu.extract_r1r2(rvol)*rscale**2
-#r1r2 = np.sum(rvol, axis=0)*rscale**2
+    rvol = ppu.read_dbin(str(padf_path/f'{padf_fname}.dbin'), nQ, nTheta)
 
 
 
-
-ppu.plot_r1r2map(r1r2, title=f'{qcorrel_fname[:4]} padf (scaled)',
-                extent=[0,tmax,rmax,0])
-
-
-
-plt.figure()
-
-theta_lin_sum = np.zeros(nTheta)
-
-for i in range(0, nQ):
-    theta_lin_sum += r1r2[i,:]
-   # plt.plot(t_space, r1r2[i,:], label=f'$r_1={np.round(r_space[i])}')
-
-plt.plot(t_space, theta_lin_sum)
-plt.title(f'{qcorrel_fname[:4]} real space theta sum')
+    r1r2 = ppu.extract_r1r2(rvol*rscale**2)
+    ppu.plot_map(r1r2[:,:180], title=f'{padf_fname} r1r2',
+                 extent=[0,tmax,rmax,0], save=f'{padf_fname}_r1r2')
 
 
 
-
-#vlines = [24,33, 42, 47,60, 72, 83, 90,120]  #1cos
-
-vlines = [30,60, 45,100 ]  #1cos
-
-for vline in vlines:
-
-    plt.axvline(linewidth=1, x=vline)
-    plt.text(vline,np.max(theta_lin_sum),f'{vline}',rotation=90)
-
-#plt.legend()
+    sumax0 =np.sum(rvol*rscale**2, axis=0)
+    ppu.plot_map(sumax0[:,:180], title=f'{padf_fname} sumax0',
+                 extent=[0,tmax,rmax,0], save=f'{padf_fname}_sumax0')
 
 
 
-
-
-#plt.figure()
-
-
-#for i in range(0, int(nTheta/2), 18):
- #   plt.plot(r_space, r1r2[:,i], label=f'$theta={np.round(t_space[i])}')
-
-#plt.legend()
+    rsx, rsy = np.meshgrid(r_space,r_space)
+    sumax2 =np.sum(rvol, axis=2)*(rsx**(1.5))*(rsy**(1.5))
+    ppu.plot_map(sumax2, title=f'{padf_fname} sumax2',
+                 extent=[0,rmax,rmax,0], save=f'{padf_fname}_sumax2')
 
 
 plt.show()
-
-
-
-
-
-
 

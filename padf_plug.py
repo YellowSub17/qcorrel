@@ -18,29 +18,33 @@ if __name__== '__main__':
 
 
     dbins = []
-    dbins.append(qcorrel_dbins_path / '1cos-sf_qcorrel.dbin')
+
+    #dbins.append(qcorrel_dbins_path / '253l-sf_ave_qcorrel.dbin')
+    #dbins.append(qcorrel_dbins_path / '254l-sf_ave_qcorrel.dbin')
+    #dbins.append(qcorrel_dbins_path / '253l-sf_ave_comp254l-sf_ave_qcorrel.dbin')
+    #dbins.append(qcorrel_dbins_path / '254l-sf_ave_comp253l-sf_ave_qcorrel.dbin')
+    #qmax = [0.14,0.14,0.14,0.14]
 
 
-    dbins.append(qcorrel_dbins_path / '1mft-sf_qcorrel.dbin')
+####dbins.append(qcorrel_dbins_path / '1al1-sf_qcorrel.dbin')
+####dbins.append(qcorrel_dbins_path / '1mft-sf_qcorrel.dbin')
+####dbins.append(qcorrel_dbins_path / '1cos-sf_qcorrel.dbin')
+####dbins.append(qcorrel_dbins_path / '4ggr-sf_qcorrel.dbin')
+####dbins.append(qcorrel_dbins_path / '5z6y-sf_qcorrel.dbin')
+####dbins.append(qcorrel_dbins_path / '4lqt-sf_qcorrel.dbin')
+####dbins.append(qcorrel_dbins_path / '2b3p-sf_qcorrel.dbin')
+####qmaxs = [0.3,0.39,0.35,0.35,0.15,0.3,0.15]
+
+    dbins.append(qcorrel_dbins_path/ '5z6y-sf_highres_qcorrel.dbin')
+
+    dbins.append(qcorrel_dbins_path/ '2b3p-sf_highres_qcorrel.dbin')
+    qmaxs = [0.25, 0.2]
 
 
-    #dbins.append(qcorrel_dbins_path / '4osd-sf_res4_qcorrel.dbin')
 
-
-
-    #dbins.append(qcorrel_dbins_path /'6jfv-sf_res4_qcorrel.dbin')
-
-
-    #dbins.append(qcorrel_dbins_path/ '6q5j-sf_res4_qcorrel.dbin')
-
-    #dbins.append(qcorrel_dbins_path / '254l-sf_qcorrel.dbin')
-
-    #dbins.append(qcorrel_dbins_path / '253l-sf_qcorrel.dbin')
-
-    nQ = 150
+    nQ =256
     nTheta = 360
-    qmaxs = [0.3, 0.3]#,  0.14,0.14,0.14]
-    rmaxs = [20]*2
+    rmaxs = [50]*len(dbins)
 
 
     nls = [20]
@@ -60,7 +64,7 @@ if __name__== '__main__':
 
                 config_file.write(f'wavelength = 1e-10\n\n')
 
-                config_file.write(f'tag = {fname}nl{nl}\n\n')
+                config_file.write(f'tag = {fname}\n\n')
 
 
                 config_file.write(f'nthq = {nTheta}\n\n')

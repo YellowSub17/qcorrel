@@ -357,7 +357,7 @@ def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks=4):
 
 
 
-def print_qmax(cif ):
+def print_qmax(cif, qmaxs= []):
     '''
     Produce a 3D correlation volume of the scattering vectors within a CIF file. nQ and qmax specify the resolution in
     qspace, ntheta defines the angular resolution (theta max locked at 180). Threaded for speed.
@@ -368,8 +368,18 @@ def print_qmax(cif ):
     # get the scattering vectors
     qs = calc_cif_qs(cif)
 
-    # get indices where q is les then qmax
+
     print(f'Max q: {np.max(qs[:,3])}')
+    for qmax in qmaxs:
+        # get indices where q is les then qmax
+        correl_vec_indices = np.where(qs[:, 3] < qmax)[0]
+
+        # remove scattering vectors with magnitude less then qmax
+        qs_of_qmax = qs[correl_vec_indices]
+
+
+        # get indices where q is les then qmax
+        print(f'qmax={qmax}, Number of Q vectors {len(qs_of_qmax)}')
 
 
 
@@ -389,38 +399,48 @@ if __name__ == '__main__':
     alert(sub=f'Starting correlation at time: {time_string}')
 
 
-    base_path = Path('cifs/Lyso')
+    alpha_path = Path('cifs/alpha')
+    GFP_path = Path('cifs/GFP')
+    keratin_path = Path('cifs/alpha/keratin')
 
     cif_file_names = []
 
-    #cif_file_names.append(base_path / '253l-sf_hack.cif')
-
-    cif_file_names.append(base_path / '254l-sf_hack.cif')
-    #for protein in proteins:
-    # cif_file_names.append(base_path / '1cos-sf.cif')
-    #
-    # cif_file_names.append(base_path / '1mft-sf.cif')
-
-   #cif_file_names.append(base_path / '6q5j-sf_res4.cif')
-
-   #cif_file_names.append(base_path /'keratin' /'6jfv-sf_res4.cif')
-   ##cif_file_names.append(base_path / 'keratin' /'6uui-sf_res4.cif')
-
-   #cif_file_names.append(base_path / '4osd-sf_res4.cif')
+    # cif_file_names.append(alpha_path / '1al1-sf.cif')
+    # cif_file_names.append(alpha_path / '1mft-sf.cif')
+    # cif_file_names.append(alpha_path / '1cos-sf.cif')
+    # cif_file_names.append(GFP_path / '4ggr-sf.cif')
+    # cif_file_names.append(GFP_path / '5z6y-sf.cif')
+    # cif_file_names.append(GFP_path / '4lqt-sf.cif')
+    # cif_file_names.append(GFP_path /'2b3p-sf.cif')
+    # qmaxs=[0.3,0.39,0.35,0.35,0.15,0.3,0.15]
 
 
+    cif_file_names.append(GFP_path / '4lqt-sf.cif')
+    cif_file_names.append(alpha_path / '1al1-sf.cif')
+    cif_file_names.append(alpha_path / '1mft-sf.cif')
+    cif_file_names.append(alpha_path / '1cos-sf.cif')
+    qmaxs=[0.4,0.369, 0.4,0.45]
 
-    nq=150
+
+
+
+    # cif_file_names.append(GFP_path / '5z6y-sf.cif')
+    # cif_file_names.append(GFP_path /'2b3p-sf.cif')
+    # qmaxs=[0.25, 0.2]
+
+
+    nq=256
     nt=360
-    qmaxs=[0.14,0.14]
+
 
 
     for cif, qmax in zip(cif_file_names, qmaxs):
 
-        # print(f'Reading {cif}')
+        print(f'Reading {cif}')
         sf_cif = CifFile.ReadCif(str(cif))
 
-        # print_qmax(sf_cif)
+        # print_qmax(sf_cif, [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6])
+        # print('\n\n')
 
 
         start = time.time()
@@ -429,7 +449,7 @@ if __name__ == '__main__':
 
 
 
-        dbin_fname = str(cif.stem+'_qcorrel')
+        dbin_fname = str(cif.stem+'_highres_qcorrel')
 
 
         ppu.save_dbin(correl,dbin_fname)
@@ -440,8 +460,8 @@ if __name__ == '__main__':
         time_string = time.strftime("%H:%M:%S", named_tuple)
         alert(msg=f'Correlated {cif.stem} at time: {time_string}')
 
-        named_tuple = time.localtime()
-        time_string = time.strftime("%H:%M:%S", named_tuple)
-        alert(sub=f'Finish correlation at time: {time_string}')
+    named_tuple = time.localtime()
+    time_string = time.strftime("%H:%M:%S", named_tuple)
+    alert(sub=f'Finish correlation at time: {time_string}')
 
 

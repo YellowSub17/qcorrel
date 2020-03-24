@@ -8,7 +8,7 @@ import struct
 
 
 def plot_map(map, title='', save=None, cmap='plasma', extent=None,
-        xlabel = 'Correlation Angle $\Delta$ [Degrees]', ylabel= 'Scattering Magnitude $q$ [1/$\AA$]'):
+        xlabel = '', ylabel= ''):
 
     plt.figure()
     plt.title(title)
@@ -19,31 +19,19 @@ def plot_map(map, title='', save=None, cmap='plasma', extent=None,
     if type(save)==str:
         save_path = f'{save}.png'
         plt.savefig(str(save_path))
-        plt.close(plt.gcf().number)
 
 
 
-def plot_r1r2map(map, title='', save=None, cmap='plasma', extent=None,
-        xlabel = 'Correlation Angle $\Delta$ [Degrees]', ylabel= 'Correlation distance $r_1=r_2$ [$\AA$]'):
 
-    plt.figure()
-    plt.title(title)
-    plt.imshow(map, cmap=cmap, aspect='auto', extent=extent)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.colorbar()
-    if type(save)==str:
-        save_path = f'{save}.png'
-        plt.savefig(str(save_path))
 
 
 def save_tiff(im, name="IMAGE"):
 
     if name[-4:]=='tiff':
-        save_path = Path('tiffs') / f'{name}'
+        save_path =  f'{name}'
     else:
-        save_path = Path('tiffs') / f'{name}.tiff'
-    imageio.imsave(save_path, im)
+        save_path =  f'{name}.tiff'
+    imageio.imsave(save_path, im.astype(np.float32))
 
 
 def save_dbin(data, name='DBIN'):
@@ -52,7 +40,7 @@ def save_dbin(data, name='DBIN'):
         save_path = Path('dbins') / f'{name}'
     else:
         save_path = Path('dbins') / f'{name}.dbin'
-    
+
     f = open(save_path, "wb")
     fmt = '<' + 'd' * data.size
     bin_in = struct.pack(fmt, *data.flatten()[:])
@@ -122,7 +110,7 @@ def convolve_gaussian(image, rad=3, rady=1):
     return output
 
 def extract_r1r2(vol):
-    
+
     nQ = vol.shape[0]
     nTheta = vol.shape[-1]
 
@@ -137,16 +125,17 @@ def extract_r1r2(vol):
 
 
 
-def convolve_3D_gaussian(vol, wx, wy, wz, filter_size = 9):
+def convolve_3D_gaussian(vol, wx, wy, wz, filter_size = 9, mode='constant', cval=0.0):
     from scipy import ndimage
-    xx,yy,zz = np.meshgrid(np.linspace(-wx,wx,filter_size), np.linspace(-wy,wy,filter_size),np.linspace(-wz,wz,filter_size))
-    filter = np.exp(-xx**2 - yy**2 - zz**2)/(np.sqrt(2*np.pi)**3)
-    filter -=np.min(filter)
-    filter /= np.max(filter)
+    xx,yy,zz = np.meshgrid(np.linspace(-wx/2,wx/2,filter_size), np.linspace(-wy/2,wy/2,filter_size),np.linspace(-wz/2,wz/2,filter_size))
+    g_filter = np.exp(-xx**2 - yy**2 - zz**2)#/(np.sqrt(2*np.pi)**3)
+    #g_filter -=np.min(g_filter)
+    #g_filter /= np.max(g_filter)
 
-    new_vol = ndimage.convolve(vol, filter, mode='constant', cval=0.0)
+    new_vol = ndimage.convolve(vol, g_filter, mode=mode, cval=cval)
 
-    return new_vol
+    return new_vol, g_filter
+
 
 def write_log(path, **kwargs):
 
@@ -157,40 +146,91 @@ def write_log(path, **kwargs):
     f.close()
 
 if __name__ =='__main__':
-    
 
 
-    padf_out_path = Path('/home/pat/rmit-onedrive/phd/python_projects/py3padf02/padf/output')
+    dbin_path = Path('dbins/convol_test/')
+
+    nQ = 256
+    nTheta = 360
+    qmax = 0.14
+
+
     dbins = []
-    
-    dbins.append(padf_out_path / '1cos-sf_res4_qcorrel_padf.dbin')
+
+    dbins.append(dbin_path / '253l-sf_ave_qcorrel.dbin')
+
+    dbins.append(dbin_path / '254l-sf_ave_qcorrel.dbin')
 
 
-    
-    
-    nQ = 150
-    qmax = 0.08
-    nTheta = 180 
-    rmax =(nQ*1e-10)/(2*qmax)*1e9
-
-
-    r_scale = np.linspace(0, rmax, nQ)**2
-    theta_scale = np.linspace(0, 180, nTheta)
-
-    tt,rr = np.meshgrid(theta_scale, r_scale)
-
-    
-
-    rcrop_ind =0
+    convols = [4,8,12,16,20,24]
     for dbin in dbins:
-        arr = read_dbin(str(dbin), nQ, nTheta)
+        print(str(dbin))
+        qcorrel_vol = read_dbin(str(dbin), nQ, nTheta)
 
-        r1r2map = extract_r1r2(arr)
-        
-        plot_map(r1r2map[rcrop_ind:,:]*rr[rcrop_ind:,:], extent=[0,nTheta,rmax, r_scale[rcrop_ind]])
-        plt.figure()
-        plt.plot(np.linspace(0,180,nTheta), r1r2map[10, :]/np.max(r1r2map[10,:]))
-    plt.show()
-    
+        for filter_size in convols:
+            print(filter_size)
+            convolved_qcorrel_vol, x = convolve_3D_gaussian(qcorrel_vol, 6,6,6, filter_size, mode='reflect')
+            save_dbin(convolved_qcorrel_vol,f'convol_test/{dbin.stem}_filter{filter_size}')
 
+
+
+
+
+#   # Convol test
+#   vol = np.random.random((100,100,100))
+#   plt.figure()
+#   plt.imshow(vol[:,:,50])
+
+
+#   for filter_size in [1]:# range(4,25 ,4):
+#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='nearest')
+
+#       plt.figure()
+#       plt.imshow(vol1[:,:,50])
+#       plt.figure()
+#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
+
+#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='mirror')
+
+#       plt.figure()
+#       plt.imshow(vol1[:,:,50])
+#       plt.figure()
+#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
+
+
+#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='wrap')
+
+#       plt.figure()
+#       plt.imshow(vol1[:,:,50])
+#       plt.figure()
+#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
+
+
+#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='reflect')
+
+#       plt.figure()
+#       plt.imshow(vol1[:,:,50])
+#       plt.figure()
+#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
+
+
+#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='constant', cval=1.0)
+
+#       plt.figure()
+#       plt.imshow(vol1[:,:,50])
+#       plt.figure()
+#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
+
+
+
+#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='constant', cval=0.0)
+
+#       plt.figure()
+#       plt.imshow(vol1[:,:,50])
+#       plt.figure()
+#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
+
+
+
+#   plt.show()
 

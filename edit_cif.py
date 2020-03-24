@@ -3,164 +3,138 @@ import CifFile
 import numpy as np
 from pathlib import Path
 
-
-def add_err(fname, outfname, res=None, err_scale=1, tag=0):
-
-
-    # fname = Path(f'cifs/{dir}/{pdb}-sf.cif')
-    # if res!=None:
-    #     fname = Path(f'cifs/{dir}/{pdb}-sf_res{res}.cif')
-
-    print(f'Reading Cif {fname}')
-    cif = CifFile.ReadCif(fname) # read the cif file
-
-    cif_key = cif.visible_keys[0]
-
-    num_ref = len(cif[cif_key]['_refln.index_h'])
-
-    I_refl_orig= np.zeros(num_ref, dtype=float)
-    I_sig_orig=np.zeros(num_ref, dtype=float)
-
-    F_refl_orig = np.zeros(num_ref, dtype=float)
-    F_sig_orig = np.zeros(num_ref, dtype=float)
-
-
-
-    if '_refln.intensity_meas' in cif[cif_key]:
-        I_refl_orig = cif[cif_key]['_refln.intensity_meas']
-        I_sig_orig = cif[cif_key]['_refln.intensity_sigma']
-
-        for i, (I, sig) in enumerate(zip(I_refl_orig, I_sig_orig)):
-            if I=='?' or sig=='?':
-                I_refl_orig[i] = '0'
-                I_sig_orig[i] ='0'
-            else:
-                continue
-
-        I_refl_orig = np.array([float(I) for I in I_refl_orig])
-        I_sig_orig = np.array([float(sig) for sig in I_sig_orig])
-
-
-
-    if '_refln.F_meas_au' in cif[cif_key]:
-        F_refl_orig = cif[cif_key]['_refln.F_meas_au']
-        F_sig_orig = cif[cif_key]['_refln.F_meas_sigma_au']
-
-        for i, (F, sig) in enumerate(zip(F_refl_orig, F_sig_orig)):
-            if F=='?' or sig=='?':
-                F_refl_orig[i] = '0'
-                F_sig_orig[i] ='0'
-            else:
-                continue
-
-        # Conversion from F to I (check implementation?)
-        # F_refl_orig = np.array([np.round((float(F))**2,3) for F in F_refl_orig])
-        # F_sig_orig = np.array([np.round((float(sig))**2,3) for sig in F_sig_orig])
-        F_refl_orig = np.array([float(F) for F in F_refl_orig])
-        F_sig_orig = np.array([float(sig) for sig in F_sig_orig])
+import matplotlib.pyplot as plt
 
 
 
 
-    #int new lists
-    new_I= []
-    new_Isig = []
-    new_F = []
-    new_Fsig = []
+def diff_cif(fname1, fname2, bins=50):
+    '''
+    anlayize the difference in reflections between two cif files.
+    '''
+    print('Reading Cif 1')
+    cif1 = CifFile.ReadCif(str(fname1))
+
+    print('Reading Cif 2')
+    cif2 = CifFile.ReadCif(str(fname2))
+
+    h1, k1, l1, I1, Isig1 = import_hklIF(cif1)
+    h2, k2, l2, I2, Isig2 = import_hklIF(cif2)
+
+    refl1 = [(int(h), int(k), int(l)) for h, k, l in zip(h1, k1, l1)]
+    refl2 = [(int(h), int(k), int(l)) for h, k, l in zip(h2, k2, l2)]
 
 
 
-    for  I, Isig, F, Fsig in zip(I_refl_orig,I_sig_orig,F_refl_orig,F_sig_orig):
+    diffs = []
+    for i, refl in enumerate(set(refl1) &set(refl2)):
+        diffs.append(I1[refl1.index(refl)] - I2[refl2.index(refl)])
 
+    diffs = np.array(diffs)
 
-        #append indices less then bounds to the new lists
+    print(f'Maximum difference: {np.max(diffs)}')
 
-        new_I.append(I+np.random.normal(0, err_scale*Isig))
-        new_Isig.append(Isig)
-        new_F.append(F+np.random.normal(0, err_scale*Fsig))
-        new_Fsig.append(Fsig)
+    print(f'Minimum difference: {np.min(diffs)}')
 
+    print(f'Average difference: {np.mean(diffs)}')
 
-    if np.max(I_refl_orig)!=0:
-        new_I = [str(I) for I in new_I]
-        new_Isig = [str(Isig) for Isig in new_Isig]
-        cif[cif_key]['_refln.intensity_meas'] = new_I
-        cif[cif_key]['_refln.intensity_sigma'] = new_Isig
+    plt.figure()
+    plt.hist(diffs, bins=bins)
 
-    if np.max(F_refl_orig)!=0:
-        new_F = [str(F) for F in new_F]
-        new_Fsig = [str(Fsig) for Fsig in new_Fsig]
-        cif[cif_key]['_refln.F_meas_au'] = new_F
-        cif[cif_key]['_refln.F_meas_sigma_au'] = new_Fsig
+    plt.title(f'Difference in intensity: {fname1}, {fname2}')
+    plt.xlabel('Difference')
+    plt.ylabel('Counts')
 
-
-    #write the dict to file
-
-    out_file = open(f'{outfname}-sf_res{res}_err{err_scale}_tag{tag}.cif', 'w')
-    out_file.write(cif.WriteOut())
-    out_file.close()
 
 
 def comp_cif(fname1, fname2):
-
+    '''
+    Compare the reflections between two cif files.
+    Save a new cif file with the reflections that are found in both, with intensity values of fname1
+    '''
+    print('Reading Cif 1')
     cif1 = CifFile.ReadCif(str(fname1))
+
+    print('Reading Cif 2')
     cif2 = CifFile.ReadCif(str(fname2))
 
-    cif1_key = cif1.visible_keys[0]
-    cif2_key = cif2.visible_keys[0]
+    h1, k1, l1, I1, Isig1 = import_hklIF(cif1)
+    h2, k2, l2, I2, Isig2 = import_hklIF(cif2)
 
+    refl1 = [(int(h), int(k), int(l)) for h, k, l in zip(h1, k1, l1)]
+    refl2 = [(int(h), int(k), int(l)) for h, k, l in zip(h2, k2, l2)]
 
-    h1= cif1[cif1_key]['_refln.index_h']
-    h2= cif2[cif2_key]['_refln.index_h']
-
-    k1= cif1[cif1_key]['_refln.index_k']
-    k2= cif2[cif2_key]['_refln.index_k']
-
-    l1= cif1[cif1_key]['_refln.index_l']
-    l2= cif2[cif2_key]['_refln.index_l']
-
-    if '_refln.intensity_meas' in cif1[cif1_key]:
-        I_refl_orig = cif1[cif1_key]['_refln.intensity_meas']
-        I_sig_orig = cif1[cif1_key]['_refln.intensity_sigma']
-
-        for i, (I, sig) in enumerate(zip(I_refl_orig, I_sig_orig)):
-            if I=='?' or sig=='?':
-                I_refl_orig[i] = '0'
-                I_sig_orig[i] ='0'
-            else:
-                continue
-
-        I_refl_orig = np.array([float(I) for I in I_refl_orig])
-        I_sig_orig = np.array([float(sig) for sig in I_sig_orig])
+    intersection = list(set(refl1) & set(refl2))
 
 
 
-    if '_refln.F_meas_au' in cif[cif_key]:
-        F_refl_orig = cif[cif_key]['_refln.F_meas_au']
-        F_sig_orig = cif[cif_key]['_refln.F_meas_sigma_au']
+    new_h = []
+    new_k = []
+    new_l = []
+    new_I = []
+    new_Isig = []
 
-        for i, (F, sig) in enumerate(zip(F_refl_orig, F_sig_orig)):
-            if F=='?' or sig=='?':
-                F_refl_orig[i] = '0'
-                F_sig_orig[i] ='0'
-            else:
-                continue
 
-        # Conversion from F to I (check implementation?)
-        F_refl_orig = np.array([np.round((float(F))**2,3) for F in F_refl_orig])
-        F_sig_orig = np.array([np.round((float(sig))**2,3) for sig in F_sig_orig])
+    for i, refl in enumerate(intersection):
+        new_h.append(refl[0])
+        new_k.append(refl[1])
+        new_l.append(refl[2])
+        #DEBUG PRINT STATEMENTS
+        print(refl)
+        # print(i, I1[i])
+        print(refl1.index(refl), I1[refl1.index(refl)])
+        print('\n\n')
+        new_I.append(I1[refl1.index(refl)])
+        new_Isig.append( Isig1[refl1.index(refl)])
 
 
 
 
 
-    refl1 = [(int(h),int(k),int(l)) for h,k,l in zip(h1,k1,l1)]
 
-    refl2 = [(int(h),int(k),int(l)) for h,k,l in zip(h2,k2,l2)]
+    # convert the ints to str
+    new_h = [str(h) for h in new_h]
+    new_k = [str(k) for k in new_k]
+    new_l = [str(l) for l in new_l]
 
-    return refl1, refl2
+    # save str list back into cif dict
+    cif1[ cif1.visible_keys[0]]['_refln.index_h'] = new_h
+    cif1[ cif1.visible_keys[0]]['_refln.index_k'] = new_k
+    cif1[ cif1.visible_keys[0]]['_refln.index_l'] = new_l
+
+    new_I = [str(I) for I in new_I]
+    new_Isig = [str(Isig) for Isig in new_Isig]
+
+    if '_refln.intensity_meas' in cif1[cif1.visible_keys[0]]:
+        cif1[ cif1.visible_keys[0]]['_refln.intensity_meas'] = new_I
+        cif1[ cif1.visible_keys[0]]['_refln.intensity_sigma'] = new_Isig
+
+    elif '_refln.F_meas_au' in cif1[ cif1.visible_keys[0]]:
+        cif1[ cif1.visible_keys[0]]['_refln.F_meas_au'] = new_I
+        cif1[ cif1.visible_keys[0]]['_refln.F_meas_sigma_au'] = new_Isig
+    else:
+        print('CHECK CIF ENTRY NAME!!')
+        return None
 
 
+
+
+
+
+
+    # write the dict to file
+
+    out_fname = fname1.stem + f'_comp{fname2.stem}.cif'
+
+    outfile = fname1.parent / out_fname
+
+    print(f'Saving to:{outfile}')
+    out_file = open(str(outfile), 'w')
+    out_file.write(cif1.WriteOut())
+    out_file.close()
+
+    # debug = np.array([new_h, new_k, new_l, new_I, new_Isig])
+    # return debug
 
 
 def cut_hkl(fname, resolutions):
@@ -170,7 +144,7 @@ def cut_hkl(fname, resolutions):
     remaining reflections are saved as outfname
     '''
     print(f'Reading Cif {fname}')
-    cif = CifFile.ReadCif(str(fname)) # read the cif file
+    cif = CifFile.ReadCif(str(fname))  # read the cif file
 
     cif_key = cif.visible_keys[0]
 
@@ -178,125 +152,64 @@ def cut_hkl(fname, resolutions):
     b_len = float(cif[cif_key]['_cell.length_b'])
     c_len = float(cif[cif_key]['_cell.length_c'])
 
-    #read in the reflection indices and convert to int
-    h_refl_orig = cif[cif_key]['_refln.index_h']
-    h_refl_orig = np.array([int(h) for h in h_refl_orig])
-
-    k_refl_orig = cif[cif_key]['_refln.index_k']
-    k_refl_orig = np.array([int(k) for k in k_refl_orig])
-    
-    l_refl_orig = cif[cif_key]['_refln.index_l']
-    l_refl_orig = np.array([int(l) for l in l_refl_orig])
-
-    I_refl_orig= np.zeros(len(l_refl_orig), dtype=float)
-    I_sig_orig=np.zeros(len(l_refl_orig), dtype=float)
-
-    F_refl_orig = np.zeros(len(l_refl_orig), dtype=float)
-    F_sig_orig = np.zeros(len(l_refl_orig), dtype=float)
 
 
-    if '_refln.intensity_meas' in cif[cif_key]:
-        I_refl_orig = cif[cif_key]['_refln.intensity_meas']
-        I_sig_orig = cif[cif_key]['_refln.intensity_sigma']
-
-        for i, (I, sig) in enumerate(zip(I_refl_orig, I_sig_orig)):
-            if I=='?' or sig=='?':
-                I_refl_orig[i] = '0'
-                I_sig_orig[i] ='0'
-            else:
-                continue
-
-        I_refl_orig = np.array([float(I) for I in I_refl_orig])
-        I_sig_orig = np.array([float(sig) for sig in I_sig_orig])
-
-
-
-    if '_refln.F_meas_au' in cif[cif_key]:
-        F_refl_orig = cif[cif_key]['_refln.F_meas_au']
-        F_sig_orig = cif[cif_key]['_refln.F_meas_sigma_au']
-
-        for i, (F, sig) in enumerate(zip(F_refl_orig, F_sig_orig)):
-            if F=='?' or sig=='?':
-                F_refl_orig[i] = '0'
-                F_sig_orig[i] ='0'
-            else:
-                continue
-
-        # Conversion from F to I (check implementation?)
-        F_refl_orig = np.array([np.round((float(F))**2,3) for F in F_refl_orig])
-        F_sig_orig = np.array([np.round((float(sig))**2,3) for sig in F_sig_orig])
-        # F_refl_orig = np.array([float(F) for F in F_refl_orig])
-        # F_sig_orig = np.array([float(sig) for sig in F_sig_orig])
-
-
-
-
-
+    h_refl_orig, k_refl_orig, l_refl_orig, I_refl_orig, I_sig_orig = import_hklIF(cif)
 
     for res in resolutions:
 
         print(f'Computing resolution: {res}')
-        #int new lists
+        # int new lists
         new_h = []
         new_k = []
         new_l = []
         new_I = []
         new_Isig = []
-        new_F = []
-        new_Fsig = []
 
-        q_max = 1.0/(2*res)
+        q_max = 1.0 / (2 * res)
 
-        h_bound = int(round(a_len*q_max))
-        k_bound = int(round(b_len*q_max))
-        l_bound = int(round(c_len*q_max))
+        h_bound = int(round(a_len * q_max))
+        k_bound = int(round(b_len * q_max))
+        l_bound = int(round(c_len * q_max))
 
         print(f'HKL BOUNDS: {h_bound}, {k_bound}, {l_bound}')
 
-        for h, k, l, I, Isig, F, Fsig in zip(h_refl_orig, k_refl_orig, l_refl_orig,I_refl_orig,I_sig_orig,F_refl_orig,F_sig_orig):
+        for h, k, l, I, Isig in zip(h_refl_orig, k_refl_orig, l_refl_orig, I_refl_orig, I_sig_orig):
             if abs(h) > h_bound or abs(k) > k_bound or abs(l) > l_bound:
-                continue        #skip reflections greater than bounds
+                continue  # skip reflections greater than bounds
 
-
-            #append indices less then bounds to the new lists
+            # append indices less then bounds to the new lists
             new_h.append(h)
             new_k.append(k)
             new_l.append(l)
             new_I.append(I)
             new_Isig.append(Isig)
-            new_F.append(F)
-            new_Fsig.append(Fsig)
 
-        #convert the ints to str
+        # convert the ints to str
         new_h = [str(h) for h in new_h]
         new_k = [str(k) for k in new_k]
         new_l = [str(l) for l in new_l]
 
-
-
-        #save str list back into cif dict
+        # save str list back into cif dict
         cif[cif_key]['_refln.index_h'] = new_h
         cif[cif_key]['_refln.index_k'] = new_k
         cif[cif_key]['_refln.index_l'] = new_l
 
-        if np.max(I_refl_orig)!=0:
-            new_I = [str(I) for I in new_I]
-            new_Isig = [str(Isig) for Isig in new_Isig]
+        new_I = [str(I) for I in new_I]
+        new_Isig = [str(Isig) for Isig in new_Isig]
+
+        if '_refln.intensity_meas' in cif[cif_key]:
             cif[cif_key]['_refln.intensity_meas'] = new_I
             cif[cif_key]['_refln.intensity_sigma'] = new_Isig
 
-        if np.max(F_refl_orig)!=0:
-            new_F = [str(F) for F in new_F]
-            new_Fsig = [str(Fsig) for Fsig in new_Fsig]
-            cif[cif_key]['_refln.F_meas_au'] = new_F
-            cif[cif_key]['_refln.F_meas_sigma_au'] = new_Fsig
+        elif '_refln.F_meas' in cif[cif_key]:
+            cif[cif_key]['_refln.F_meas'] = new_I
+            cif[cif_key]['_refln.F_sigma'] = new_Isig
+        # write the dict to file
 
+        out_fname = fname.stem + f'_res{res}.cif'
 
-        #write the dict to file
-
-        out_fname = fname.stem+f'_res{res}.cif'
-
-        outfile = fname.parent /out_fname
+        outfile = fname.parent / out_fname
 
         print(f'Saving to:{outfile}')
         out_file = open(str(outfile), 'w')
@@ -304,21 +217,74 @@ def cut_hkl(fname, resolutions):
         out_file.close()
 
 
+def import_hklIF(cif):
+    cif_key = cif.visible_keys[0]
 
-if __name__=="__main__":
+    # read in the reflection indices and convert to int
+    h_refl_orig = cif[cif_key]['_refln.index_h']
+    h_refl_orig = np.array([int(h) for h in h_refl_orig])
 
+    k_refl_orig = cif[cif_key]['_refln.index_k']
+    k_refl_orig = np.array([int(k) for k in k_refl_orig])
+
+    l_refl_orig = cif[cif_key]['_refln.index_l']
+    l_refl_orig = np.array([int(l) for l in l_refl_orig])
+
+    I_refl_orig = np.zeros(len(l_refl_orig), dtype=float)
+    I_sig_orig = np.zeros(len(l_refl_orig), dtype=float)
+
+    F_refl_orig = np.zeros(len(l_refl_orig), dtype=float)
+    F_sig_orig = np.zeros(len(l_refl_orig), dtype=float)
+
+    if '_refln.intensity_meas' in cif[cif_key]:
+        print('Reading INTENSITY')
+        I_refl_orig = cif[cif_key]['_refln.intensity_meas']
+        I_sig_orig = cif[cif_key]['_refln.intensity_sigma']
+
+        for i, (I, sig) in enumerate(zip(I_refl_orig, I_sig_orig)):
+            if I == '?' or sig == '?':
+                I_refl_orig[i] = '0'
+                I_sig_orig[i] = '0'
+            else:
+                continue
+
+        I_refl_orig = np.array([float(I) for I in I_refl_orig])
+        I_sig_orig = np.array([float(sig) for sig in I_sig_orig])
+
+        return h_refl_orig, k_refl_orig, l_refl_orig, I_refl_orig, I_sig_orig
+
+
+
+    elif '_refln.F_meas_au' in cif[cif_key]:
+        print('Reading STRUCTURE FACTORS')
+        F_refl_orig = cif[cif_key]['_refln.F_meas_au']
+        F_sig_orig = cif[cif_key]['_refln.F_meas_sigma_au']
+
+        for i, (F, sig) in enumerate(zip(F_refl_orig, F_sig_orig)):
+            if F == '?' or sig == '?':
+                F_refl_orig[i] = '0'
+                F_sig_orig[i] = '0'
+            else:
+                continue
+
+        # Conversion from F to I (check implementation?)
+        F_refl_orig = np.array([float(F) for F in F_refl_orig])
+        F_sig_orig = np.array([float(sig) for sig in F_sig_orig])
+
+        return h_refl_orig, k_refl_orig, l_refl_orig, F_refl_orig, F_sig_orig
+
+    else:
+        print('NO INTENSITY INFO FOUND IN CIF')
+        exit()
+
+
+if __name__ == "__main__":
     import sys
     import os
+
     #
     sys.path.append(str(Path(os.getcwd()).parent))
 
-
     base_path = Path('cifs/cell_size')
 
-
-
-    refl1, refl2 = comp_cif(base_path/'253l-sf.cif', base_path/'254l-sf.cif' )
-
-    refl1 = set(refl1)
-    refl2 = set(refl2)
-
+    comp_cif(base_path / '253l-sf_ave.cif', base_path / '254l-sf_ave.cif')
