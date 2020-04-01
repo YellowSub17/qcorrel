@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import numpy as np
 import imageio
 from pathlib import Path
@@ -8,11 +9,11 @@ import struct
 
 
 def plot_map(map, title='', save=None, cmap='plasma', extent=None,
-        xlabel = '', ylabel= ''):
+        xlabel = '', ylabel= '', aspect='auto'):
 
     plt.figure()
     plt.title(title)
-    plt.imshow(map, cmap=cmap, aspect='auto', extent=extent)
+    plt.imshow(map, cmap=cmap, aspect=aspect, extent=extent)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.colorbar()
@@ -47,7 +48,7 @@ def save_dbin(data, name='DBIN'):
     f.write(bin_in)
     f.close()
 
-def read_dbin(path, nQ, nTheta):
+def read_dbin(path, nQ, nTheta, half_theta=False):
 
     if path[-4:]=='dbin':
         save_path = Path( f'{path}')
@@ -56,6 +57,8 @@ def read_dbin(path, nQ, nTheta):
     arr = np.fromfile(str(save_path))
     arr = arr.reshape(nQ,nQ,nTheta)
 
+    if half_theta:
+        arr=arr[:,:,:int(nTheta/2)]
     return arr
 
 
@@ -146,91 +149,41 @@ def write_log(path, **kwargs):
     f.close()
 
 if __name__ =='__main__':
+    import os
+    import matplotlib
 
+    def animate_vol(vol, interval=100, view='Q', start=0,end=-1 ):
 
-    dbin_path = Path('dbins/convol_test/')
+        if view=='Q':
+            pass
+        elif view=='T':
+            vol = np.rot90(vol, axes=(0,-1))
 
-    nQ = 256
-    nTheta = 360
-    qmax = 0.14
+        fig, ax = plt.subplots()
 
+        vol = vol[start:end, :,:]
+        ims = []
+        for i in range(vol.shape[0]):
 
-    dbins = []
+            im = ax.imshow(vol[i,:,:], animated=True)
+            title = ax.text(0.5,1.05,f"Frame {i}",
+                            size=plt.rcParams["axes.titlesize"],
+                            ha="center", transform=ax.transAxes, )
 
-    dbins.append(dbin_path / '253l-sf_ave_qcorrel.dbin')
+            ims.append([im, title])
 
-    dbins.append(dbin_path / '254l-sf_ave_qcorrel.dbin')
-
-
-    convols = [4,8,12,16,20,24]
-    for dbin in dbins:
-        print(str(dbin))
-        qcorrel_vol = read_dbin(str(dbin), nQ, nTheta)
-
-        for filter_size in convols:
-            print(filter_size)
-            convolved_qcorrel_vol, x = convolve_3D_gaussian(qcorrel_vol, 6,6,6, filter_size, mode='reflect')
-            save_dbin(convolved_qcorrel_vol,f'convol_test/{dbin.stem}_filter{filter_size}')
-
-
-
-
-
-#   # Convol test
-#   vol = np.random.random((100,100,100))
-#   plt.figure()
-#   plt.imshow(vol[:,:,50])
-
-
-#   for filter_size in [1]:# range(4,25 ,4):
-#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='nearest')
-
-#       plt.figure()
-#       plt.imshow(vol1[:,:,50])
-#       plt.figure()
-#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
-
-#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='mirror')
-
-#       plt.figure()
-#       plt.imshow(vol1[:,:,50])
-#       plt.figure()
-#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
-
-
-#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='wrap')
-
-#       plt.figure()
-#       plt.imshow(vol1[:,:,50])
-#       plt.figure()
-#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
-
-
-#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='reflect')
-
-#       plt.figure()
-#       plt.imshow(vol1[:,:,50])
-#       plt.figure()
-#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
-
-
-#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='constant', cval=1.0)
-
-#       plt.figure()
-#       plt.imshow(vol1[:,:,50])
-#       plt.figure()
-#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
+        ani = animation.ArtistAnimation(fig, ims, interval=interval, blit=False)
+        return ani
 
 
 
-#       vol1, g_filter1 = convolve_3D_gaussian(vol,6,6,6,16, mode='constant', cval=0.0)
-
-#       plt.figure()
-#       plt.imshow(vol1[:,:,50])
-#       plt.figure()
-#       plt.imshow(g_filter1[:,:,int(filter_size/2)])
+    padf_path = Path(os.getcwd()).parent /'py3padf02'/'padf'/'output'
 
 
 
-#   plt.show()
 
+    vol = read_dbin(str(padf_path/'4ggr-sf_qcorrel_padf.dbin'),256, 360, half_theta=True)
+    ani = animate_vol(vol, view='Q')
+    plt.show()
+
+ 

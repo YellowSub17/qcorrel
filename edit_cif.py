@@ -285,6 +285,8 @@ if __name__ == "__main__":
     #
     sys.path.append(str(Path(os.getcwd()).parent))
 
-    base_path = Path('cifs/cell_size')
+    base_path = Path('cifs/macro')
 
-    comp_cif(base_path / '253l-sf_ave.cif', base_path / '254l-sf_ave.cif')
+    cut_hkl(base_path/'3zoj-sf.cif', [1.7])
+
+

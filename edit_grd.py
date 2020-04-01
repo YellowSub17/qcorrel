@@ -5,7 +5,10 @@
 import numpy as np
 from pathlib import Path
 
+import matplotlib
+import matplotlib.pyplot as plt
 
+import matplotlib.animation as animation
 
 
 def read_grd(fname):
@@ -20,6 +23,7 @@ def read_grd(fname):
     grd_file_slices = grd_file.read().split('\n\n')
 
     arr_shape = grd_file_slices[0].split('\n')[2].split()
+
 
     arr_shape = (int(arr_shape[0]), int(arr_shape[1]),int(arr_shape[2]))
 
@@ -48,27 +52,24 @@ def normalize1(arr):
 
 
 
-
 if __name__=='__main__':
-    import matplotlib.pyplot as plt
-
-    vol254l = read_grd('254l-ed_res0,7_iso1')
-    vol253l = read_grd('253l-ed_res0,7_iso1')
-
-
-    vol254l = normalize1(vol254l**2)
-    vol253l = normalize1(vol253l**2)
-
-    vol = vol254l-vol253l
-
-    print(np.where(vol==np.max(vol)))
 
 
 
-    plt.imshow(vol[45,:,:])
+    vol1 = read_grd('1nqp-ed_res1,7_iso0,5')
 
+
+
+    vol1= normalize1(vol1**2)
+
+    print(np.where(vol1==np.max(vol1)))
+
+
+    print(vol1.shape)
+    plt.imshow(np.sum(vol1[-4:-2, :,:], axis=0))
+    #
     plt.show()
-
-
-
+    # #
+    # #
+    #
 

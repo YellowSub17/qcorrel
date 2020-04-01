@@ -68,43 +68,6 @@ for qcorrel_fname in qcorrel_fnames:
 
 
 
-#   plt.figure()
-
-#   theta_lin_sum = np.zeros(nTheta)
-
-#   for i in range(0, nQ):
-#       theta_lin_sum += r1r2[i,:]
-#  # plt.plot(t_space, r1r2[i,:], label=f'$r_1={np.round(r_space[i])}')
-
-#   plt.plot(t_space, theta_lin_sum)
-#   plt.title(f'{qcorrel_fname[:4]} real space theta sum')
-
-
-
-
-#vlines = [24,33, 42, 47,60, 72, 83, 90,120]  #1cos
-
-#   vlines = [30,60, 45,100 ]  #1cos
-
-#   for vline in vlines:
-
-#       plt.axvline(linewidth=1, x=vline)
-#       plt.text(vline,np.max(theta_lin_sum),f'{vline}',rotation=90)
-
-#plt.legend()
-
-
-
-
-
-#plt.figure()
-
-
-#for i in range(0, int(nTheta/2), 18):
-##   plt.plot(r_space, r1r2[:,i], label=f'$theta={np.round(t_space[i])}')
-
-#plt.legend()
-
 
 plt.show()
 

@@ -402,7 +402,7 @@ if __name__ == '__main__':
     alpha_path = Path('cifs/alpha')
     GFP_path = Path('cifs/GFP')
     keratin_path = Path('cifs/alpha/keratin')
-
+    macro_path = Path('cifs/macro')
     cif_file_names = []
 
     # cif_file_names.append(alpha_path / '1al1-sf.cif')
@@ -415,11 +415,16 @@ if __name__ == '__main__':
     # qmaxs=[0.3,0.39,0.35,0.35,0.15,0.3,0.15]
 
 
-    cif_file_names.append(GFP_path / '4lqt-sf.cif')
-    cif_file_names.append(alpha_path / '1al1-sf.cif')
-    cif_file_names.append(alpha_path / '1mft-sf.cif')
-    cif_file_names.append(alpha_path / '1cos-sf.cif')
-    qmaxs=[0.4,0.369, 0.4,0.45]
+    # cif_file_names.append(GFP_path / '4lqt-sf.cif')
+    # cif_file_names.append(alpha_path / '1al1-sf.cif')
+    # cif_file_names.append(alpha_path / '1mft-sf.cif')
+    # cif_file_names.append(alpha_path / '1cos-sf.cif')
+    # qmaxs=[0.4,0.369, 0.4,0.45]
+
+
+    cif_file_names.append(alpha_path /'5gun-sf.cif')
+    qmaxs=[0.15]
+
 
 
 
