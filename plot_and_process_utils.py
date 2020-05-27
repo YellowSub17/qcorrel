@@ -8,15 +8,19 @@ import struct
 
 
 
-def plot_map(map, title='', save=None, cmap='plasma', extent=None,
-        xlabel = '', ylabel= '', aspect='auto'):
+def plot_map(map, title='',min_max = False, cb=True, save=None, cmap='plasma', extent=None,dpi=100,
+        xlabel = '', ylabel= '', aspect='auto', vmin=None, vmax=None, origin='lower', fig_size=(6.4,4.8)):
 
-    plt.figure()
+    if min_max:
+        map = map-np.min(map)
+        map = map/np.max(map)
+    plt.figure(figsize=fig_size, dpi=dpi)
     plt.title(title)
-    plt.imshow(map, cmap=cmap, aspect=aspect, extent=extent)
+    plt.imshow(map, cmap=cmap, aspect=aspect, extent=extent, vmin=vmin, vmax=vmax, origin=origin)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.colorbar()
+    if cb:
+        plt.colorbar()
     if type(save)==str:
         save_path = f'{save}.png'
         plt.savefig(str(save_path))
@@ -48,7 +52,7 @@ def save_dbin(data, name='DBIN'):
     f.write(bin_in)
     f.close()
 
-def read_dbin(path, nQ, nTheta, half_theta=False):
+def read_dbin(path, nQ, nTheta):
 
     if path[-4:]=='dbin':
         save_path = Path( f'{path}')
@@ -56,9 +60,19 @@ def read_dbin(path, nQ, nTheta, half_theta=False):
         save_path = Path(f'{path}.dbin')
     arr = np.fromfile(str(save_path))
     arr = arr.reshape(nQ,nQ,nTheta)
+    
+    return arr
 
-    if half_theta:
-        arr=arr[:,:,:int(nTheta/2)]
+
+def read_blrr(path, nQ):
+
+    if path[-4:]=='dbin':
+        save_path = Path( f'{path}')
+    else:
+        save_path = Path(f'{path}.dbin')
+    arr = np.fromfile(str(save_path))
+    arr = arr.reshape(nQ,nQ)
+
     return arr
 
 
@@ -103,7 +117,7 @@ def make_gaussian(nx, ny, rad=None, rady=-1., cenx=None, ceny=None, invert=0, no
     return a
 
 
-def convolve_gaussian(image, rad=3, rady=1):
+def convolve_gaussian(image, rad=1, rady=1):
     ###### Gaussian Convolution Functions by AM
     # convolve an image with a gaussian (blur)
     c = make_gaussian(image.shape[0], image.shape[1], rad, rady, cenx=0, ceny=0, norm=True)
@@ -137,7 +151,7 @@ def convolve_3D_gaussian(vol, wx, wy, wz, filter_size = 9, mode='constant', cval
 
     new_vol = ndimage.convolve(vol, g_filter, mode=mode, cval=cval)
 
-    return new_vol, g_filter
+    return new_vol#, g_filter
 
 
 def write_log(path, **kwargs):
@@ -148,42 +162,42 @@ def write_log(path, **kwargs):
         f.write(f'{kw} = {kwargs[kw]}\n\n' )
     f.close()
 
-if __name__ =='__main__':
-    import os
-    import matplotlib
-
-    def animate_vol(vol, interval=100, view='Q', start=0,end=-1 ):
-
-        if view=='Q':
-            pass
-        elif view=='T':
-            vol = np.rot90(vol, axes=(0,-1))
-
-        fig, ax = plt.subplots()
-
-        vol = vol[start:end, :,:]
-        ims = []
-        for i in range(vol.shape[0]):
-
-            im = ax.imshow(vol[i,:,:], animated=True)
-            title = ax.text(0.5,1.05,f"Frame {i}",
-                            size=plt.rcParams["axes.titlesize"],
-                            ha="center", transform=ax.transAxes, )
-
-            ims.append([im, title])
-
-        ani = animation.ArtistAnimation(fig, ims, interval=interval, blit=False)
-        return ani
-
-
-
-    padf_path = Path(os.getcwd()).parent /'py3padf02'/'padf'/'output'
-
-
-
-
-    vol = read_dbin(str(padf_path/'4ggr-sf_qcorrel_padf.dbin'),256, 360, half_theta=True)
-    ani = animate_vol(vol, view='Q')
-    plt.show()
-
+#if __name__ =='__main__':
+#    import os
+#    import matplotlib
+#
+#    def animate_vol(vol, interval=100, view='Q', start=0,end=-1 ):
+#
+#        if view=='Q':
+#            pass
+#        elif view=='T':
+#            vol = np.rot90(vol, axes=(0,-1))
+#
+#        fig, ax = plt.subplots()
+#
+#        vol = vol[start:end, :,:]
+#        ims = []
+#        for i in range(vol.shape[0]):
+#
+#            im = ax.imshow(vol[i,:,:], animated=True)
+#            title = ax.text(0.5,1.05,f"Frame {i}",
+#                            size=plt.rcParams["axes.titlesize"],
+#                            ha="center", transform=ax.transAxes, )
+#
+#            ims.append([im, title])
+#
+#        ani = animation.ArtistAnimation(fig, ims, interval=interval, blit=False)
+#        return ani
+#
+#
+#
+#    padf_path = Path(os.getcwd()).parent /'py3padf02'/'padf'/'output'
+#
+#
+#
+#
+#    vol = read_dbin(str(padf_path/'4ggr-sf_qcorrel_padf.dbin'),256, 360, half_theta=True)
+#    ani = animate_vol(vol, view='Q')
+#    plt.show()
+#
  

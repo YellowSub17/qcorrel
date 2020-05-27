@@ -285,10 +285,24 @@ def correlate_chunk_worker(inputs):
     return chunk_correl#, chunk_hist
 
 
+#def calc_model_cif_qs(path_to_txt, ):
+#    
+#    f = open(str(path_to_txt), 'r')
+#    cont = f.read()
+#    lines = cont.split('\n')
+#    for line in lines[:10]:
+#    f = np.loadtxt(str(path_to_txt))
+#    print(f)
 
 
 
-def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks=4):
+
+
+
+
+
+
+def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks=4, model_cif=False):
     '''
     Produce a 3D correlation volume of the scattering vectors within a CIF file. nQ and qmax specify the resolution in
     qspace, ntheta defines the angular resolution (theta max locked at 180). Threaded for speed.
@@ -296,9 +310,11 @@ def full_correlate_threaded(cif, nQ, nTheta, qmax, nChunks=4):
     '''
 
 
-
-    # get the scattering vectors
-    qs = calc_cif_qs(cif)
+    if model_cif:
+        qs = calc_model_cif_qs(cif)
+    else:
+        # get the scattering vectors
+        qs = calc_cif_qs(cif)
 
     # get indices where q is les then qmax
     correl_vec_indices = np.where(qs[:, 3] < qmax)[0]
@@ -390,48 +406,45 @@ if __name__ == '__main__':
     import sys
     import os
 
-    sys.path.append(str(Path(os.getcwd()).parent))
 
-    from email_alert.alert import alert
 
-    named_tuple = time.localtime() # get struct_time
-    time_string = time.strftime("%H:%M:%S", named_tuple)
-    alert(sub=f'Starting correlation at time: {time_string}')
 
 
     alpha_path = Path('cifs/alpha')
     GFP_path = Path('cifs/GFP')
     keratin_path = Path('cifs/alpha/keratin')
     macro_path = Path('cifs/macro')
+    model_path = Path('cifs/sf_from_model')
     cif_file_names = []
 
-    # cif_file_names.append(alpha_path / '1al1-sf.cif')
-    # cif_file_names.append(alpha_path / '1mft-sf.cif')
-    # cif_file_names.append(alpha_path / '1cos-sf.cif')
-    # cif_file_names.append(GFP_path / '4ggr-sf.cif')
-    # cif_file_names.append(GFP_path / '5z6y-sf.cif')
-    # cif_file_names.append(GFP_path / '4lqt-sf.cif')
-    # cif_file_names.append(GFP_path /'2b3p-sf.cif')
-    # qmaxs=[0.3,0.39,0.35,0.35,0.15,0.3,0.15]
 
-
-    # cif_file_names.append(GFP_path / '4lqt-sf.cif')
-    # cif_file_names.append(alpha_path / '1al1-sf.cif')
-    # cif_file_names.append(alpha_path / '1mft-sf.cif')
-    # cif_file_names.append(alpha_path / '1cos-sf.cif')
-    # qmaxs=[0.4,0.369, 0.4,0.45]
-
-
-    cif_file_names.append(alpha_path /'5gun-sf.cif')
-    qmaxs=[0.15]
+#    # Normal size
+#    cif_file_names.append(alpha_path / '1al1-sf.cif')
+#    cif_file_names.append(alpha_path / '1mft-sf.cif')
+#    cif_file_names.append(alpha_path / '1cos-sf.cif')
+#    qmaxs=[0.3,0.39,0.35]
 
 
 
+#   # High Res
+#    cif_file_names.append(alpha_path / '1al1-sf.cif')
+#    cif_file_names.append(alpha_path / '1cos-sf.cif')
+#    qmaxs=[0.3699, 0.5]
 
 
-    # cif_file_names.append(GFP_path / '5z6y-sf.cif')
-    # cif_file_names.append(GFP_path /'2b3p-sf.cif')
-    # qmaxs=[0.25, 0.2]
+#   # mid Res for comp
+#    cif_file_names.append(alpha_path / '1cos-sf.cif')
+#    qmaxs=[0.3699]
+
+
+
+    cif_file_names.append(alpha_path/'4omz-sf.cif')
+    qmaxs = [0.3699/2]
+
+
+
+
+
 
 
     nq=256
@@ -442,31 +455,31 @@ if __name__ == '__main__':
     for cif, qmax in zip(cif_file_names, qmaxs):
 
         print(f'Reading {cif}')
+
+
+
+
+
+
+
         sf_cif = CifFile.ReadCif(str(cif))
 
-        # print_qmax(sf_cif, [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6])
-        # print('\n\n')
+#        print_qmax(sf_cif, [0.3699, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6])
+#        print('\n\n')
 
 
-        start = time.time()
+        start =time.strftime('%H:%M:%S, %A %d %B')
+        print(f'starting at {start}')
         correl = full_correlate_threaded(sf_cif, nq,nt, qmax,nChunks=4)
-        print(f'time taken {time.time() - start}')
+        end =time.strftime('%H:%M:%S, %A %d %B')
+        print(f'ended at {end}')
 
 
-
-        dbin_fname = str(cif.stem+'_highres_qcorrel')
+        dbin_fname = str(cif.stem+'_paper_qcorrel')
 
 
         ppu.save_dbin(correl,dbin_fname)
 
         log_fname=str(Path('dbins')/  f'{dbin_fname}_log.txt')
-        ppu.write_log(log_fname, cif=cif, nQ=nq, nTheta=nt, qmax=qmax )
-        named_tuple = time.localtime()
-        time_string = time.strftime("%H:%M:%S", named_tuple)
-        alert(msg=f'Correlated {cif.stem} at time: {time_string}')
-
-    named_tuple = time.localtime()
-    time_string = time.strftime("%H:%M:%S", named_tuple)
-    alert(sub=f'Finish correlation at time: {time_string}')
-
+        ppu.write_log(log_fname, cif=cif, nQ=nq, nTheta=nt, qmax=qmax, Start_Time=start,End_Time=end)
 
