@@ -5,7 +5,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-
+import matplotlib.pylab as pylab
+params = { 'axes.labelsize':20,
+         'axes.titlesize':20,
+          'xtick.labelsize':14,
+         'ytick.labelsize':14}
+pylab.rcParams.update(params)
 
 
 dbin_path = Path(str(os.getcwd())).parent.parent / 'dbins'
@@ -53,7 +58,9 @@ for dbin_fname, qmax in zip(dbin_fnames, qmaxs):
     r1r2 -= np.min(r1r2)
     r1r2 /= np.max(r1r2)
 
-    ppu.plot_map(r1r2,aspect='auto', title=f'{dbin_fname[:4].upper()} - Q space correlation',extent=[0,tmax,0,qmax], cmap='magma', xlabel='$\\theta$ / $ ^{\circ}$',ylabel='$q_1=q_2$ / $\AA^{-1}$', save=f'{dbin_fname[:4]}_q1q2' )
+    ppu.plot_map(r1r2,aspect='auto', title=f'{dbin_fname[:4].upper()} - $q$ Space Correlation',
+                 extent=[0,tmax,0,qmax], xlabel='$\\theta$ / $ ^{\circ}$',fig_size=(8,5.5), 
+                 ylabel='$q_1=q_2$ / $\AA^{-1}$', save=f'{dbin_fname[:4]}_q1q2' , cmap='viridis')
 
 #    plt.plot(t_space, 3.5175*t_space**(-1.038291), 'r,')
 

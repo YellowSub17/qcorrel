@@ -1,14 +1,22 @@
 import plot_and_process_utils as ppu
+import matplotlib.patheffects as pe
 import numpy as np
 import matplotlib.pyplot as plt
 
+import matplotlib.pylab as pylab
+params = { 'axes.labelsize':20,
+         'axes.titlesize':20,
+          'xtick.labelsize':14,
+          'legend.fontsize':14,
+         'ytick.labelsize':14}
+pylab.rcParams.update(params)
 
 class displayPADF():
     
     def __init__(self, gbf=False,abf=False,rbf=False,tf=False,
                      rf=False, fname='None',res=0.1, wid=15,widr=20,w=4,maxrad=20,
                      rmax=100,rmin=25,thmax=180,cmin=None,cmax=None,
-                     xp=[],yp=[], arc_dists =[],title='', fig_size=None, dpi=100, save_fname=None):
+                     xp=[],yp=[], arc_dists =[],title='', fig_size=None, dpi=100, save_fname=None, leg_flag=False):
         self.gaussBlurFlag = gbf #False
         self.angularBlurFlag = abf
         self.radialBlurFlag = rbf
@@ -27,7 +35,7 @@ class displayPADF():
         self.rmax = rmax
         self.rmin = rmin
         self.thmax = thmax
-        
+        self.leg_flag=leg_flag
         self.cmin = cmin
         self.cmax = cmax
         self.xpnt=xp
@@ -102,27 +110,36 @@ class displayPADF():
         ppu.plot_map(datafilt[self.rmin:self.rmax,:self.thmax],title=self.title,fig_size=self.fig_size,dpi=self.dpi, cb=False, cmap='viridis', xlabel='$\\theta$ / $ ^{\circ}$', ylabel='$r_1=r_2$ / $\AA$', origin="lower", extent=[0,180,r0,r1])
         #plt.imshow(datafilt[self.rmin:self.rmax,:self.thmax], origin="lower", extent=[0,180,r0,r1], aspect=9)
 
+        cols = plt.cm.autumn(np.linspace(0,0.9, len(self.arc_dists)))
+        for arc_dist,col in zip(self.arc_dists, cols[::-1]):
+            t_space = np.linspace(1, 90, 200)
+            plt.plot( t_space, (arc_dist/2)/np.sin(np.radians(t_space)/2),
+                     linestyle='dashdot', label=f'{arc_dist} \u00C5', color=col,
+                    linewidth=3,
+                    )
         
+
         plt.clim([self.cmin,self.cmax])
         
         clr = 'r'
         mkr = 'x'
 
-        cols = plt.cm.gist_rainbow(np.linspace(0,1,len(self.xpnt)))
-        for x,y, col in zip(self.xpnt,self.ypnt, cols):
-#            plt.plot(x, y,'o',  ms=6, markeredgewidth=1.5, markerfacecolor=col, markeredgecolor=(0,0,0,1), label=f'{x} {y}')
+        for x,y in zip(self.xpnt,self.ypnt):
             plt.plot(x, y,'o',  ms=6, markeredgewidth=1.5, markerfacecolor=(0.8,0.8,0.8,1), markeredgecolor=(0,0,0,1))
         
-        plt.plot(65, 10, 'r.', ms=7)
-
-        cols = plt.cm.autumn(np.linspace(0,0.9, len(self.arc_dists)))
-        for arc_dist,col in zip(self.arc_dists, cols):
-            t_space = np.linspace(1, 90, 200)
-            plt.plot( t_space, (arc_dist/2)/np.sin(np.radians(t_space)/2),linestyle='dashed', color=col, label=f'${arc_dist}\AA$', dashes=(5,10))
+        plt.plot(65, 10, 'r.', ms=7)#, color=(229/255,104/255,0,1))
         
+
         plt.xlim(0, 180)
         plt.ylim(self.rmin*self.res, 20)
-        plt.legend() 
+        if self.leg_flag:
+            l= plt.legend( framealpha=0, markerfirst=False,ncol=2,loc='upper center')
+        else:
+
+            l= plt.legend( framealpha=0, markerfirst=False)
+        for text in l.get_texts():
+            text.set_color('white')
+ 
         plt.draw()
 
         if self.save_fname != None:
@@ -134,9 +151,9 @@ class displayPADF():
 
 #arc_dists = [1.2, 1.3,1.5,2.5,6, 11]
 #arc_dists = [ 1.3,2.2,6.2,8.5,11, 14]
-arc_dists = [ 1.3,2.2,6.2,11]
+arc_dists = [11,6.2,2.2,1.3]
 # Jack's 1al1 model
-fname = "1al1_ex_rcor.dat"
+fname = "1al1_ex_rcor2.dat"
 
 #xpnt = [65,65, 72, 65, 90, 90, 27, 45, 90, 23, 50, 90, 90, 75, 55, 80]
 #ypnt = [8,10, 11.8, 5.8, 4.5, 6.8, 5, 9, 9, 7, 7, 15, 13, 13.5, 12, 10.75]
@@ -144,16 +161,17 @@ fname = "1al1_ex_rcor.dat"
 
 xpnt = [65,65, 72, 65, 90, 90, 27, 45, 90, 19, 53, 90, 90, 78, 55, 80, 64.2]
 ypnt = [8,10, 11.8, 5.8, 4.1, 7.1, 5, 9, 9, 7, 7, 15, 13, 14.2, 12, 10.75,13.3]
-fig_size = (6,4)
+fig_size = (8,5.5)
 dpi=150
 
-al_ex = displayPADF(gbf=True,abf=False,rbf=False,tf=True,rf=True,
-                     fname=fname,wid=15,widr=20,w=5,maxrad=20,
-                     rmax=201,rmin=30,thmax=89,cmin=-1e-3,cmax=1e-2,
+al_ex = displayPADF(gbf=True,abf=False,rbf=False,tf=True,rf=False,
+                     # fname=fname,wid=15,widr=20,w=3,maxrad=20,
+                     fname=fname,wid=30,widr=40,w=5,maxrad=20,
+                     rmax=201,rmin=30,thmax=89,cmin=-2.5,cmax=15,leg_flag=True,
                      xp=xpnt,yp=ypnt, arc_dists=arc_dists,dpi=dpi, fig_size=fig_size, save_fname='1al1_j_blur.png')
 al_ex.loadAndPlot()
 
-# Patrick's 1al1 models
+#### # Patrick's 1al1 models
 fname = "1al1_padf_r1r2.dat"
 
 al = displayPADF(gbf=False,res=0.2, abf=False,rbf=False,tf=False,rf=False,
@@ -162,13 +180,13 @@ al = displayPADF(gbf=False,res=0.2, abf=False,rbf=False,tf=False,rf=False,
                      xp=xpnt,yp=ypnt, arc_dists=arc_dists, dpi=dpi, fig_size=fig_size, save_fname='1al1_p_padf.png')
 al.loadAndPlot()
 
-# Jack's 1al1 model
-fname = "1al1_ex_rcor.dat"
+#### Jack's 1al1 model
+fname = "1al1_ex_rcor2.dat"
 
 
 al_ex2 = displayPADF(gbf=True,abf=False,rbf=False,tf=True,rf=True,
                      fname=fname,wid=15,widr=20,w=0.25,maxrad=20,
-                     rmax=201,rmin=30,thmax=89,cmin=-1e-7,cmax=1e-6,
+                     rmax=201,rmin=30,thmax=89,cmin=-1e-7,cmax=1e-7,
                      xp=xpnt,yp=ypnt, arc_dists=arc_dists,dpi=dpi, fig_size=fig_size,save_fname='1al1_j_norm.png')
 
 al_ex2.loadAndPlot()

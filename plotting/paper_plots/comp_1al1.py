@@ -4,6 +4,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plot_and_process_utils as ppu
 
+import matplotlib.pylab as pylab
+params = { 'axes.labelsize':20,
+         'axes.titlesize':20,
+          'xtick.labelsize':14,
+         'ytick.labelsize':14}
+pylab.rcParams.update(params)
+
 
 
 ##JACK NORMAL
@@ -115,14 +122,14 @@ arc_dists = [1.7, 2.7, 4.1,6]#, 10]
 cols = plt.cm.autumn(np.linspace(0,1, len(arc_dists)))
 
 
-#for col, arc_dist in zip(cols, arc_dists):
-#
-#    plt.plot(t_space, (arc_dist/2) /np.sin(np.radians(t_space/2)), '--',label=arc_dist, color=col)
-#    plt.plot(t_space, (arc_dist/2) /np.sin(np.radians((180-t_space)/2)), '--', color=col)
-#
-cols = plt.cm.bone(np.linspace(0,1, len(xpnt)))
-for x,y,col in zip(xpnt, ypnt, cols):
-    plt.plot(x,y,'x', label=f'{x}, {y}',color = col )
+for col, arc_dist in zip(cols, arc_dists):
+
+   plt.plot(t_space, (arc_dist/2) /np.sin(np.radians(t_space/2)), '--',label=arc_dist, color=col)
+   plt.plot(t_space, (arc_dist/2) /np.sin(np.radians((180-t_space)/2)), '--', color=col)
+
+# cols = plt.cm.bone(np.linspace(0,1, len(xpnt)))
+# for x,y,col in zip(xpnt, ypnt, cols):
+    # plt.plot(x,y,'x', label=f'{x}, {y}',color = col )
 
 
 

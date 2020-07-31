@@ -1,5 +1,5 @@
-import numpy as np
 import symmetry as sym
+import numpy as np
 from pathlib import Path
 import concurrent.futures
 
@@ -438,11 +438,15 @@ if __name__ == '__main__':
 
 
 
+    # cif_file_names.append(alpha_path/'4omz-sf.cif')
+    # cif_file_names.append(alpha_path/'4osd-sf.cif')
+    # qmaxs = [0.3699/2,0.3699/2 ]
+
+
     cif_file_names.append(alpha_path/'4omz-sf.cif')
-    qmaxs = [0.3699/2]
-
-
-
+    cif_file_names.append(alpha_path/'1cos-sf.cif')
+    cif_file_names.append(alpha_path/'1al1-sf.cif')
+    qmaxs = [0.3699/2,0.3699,0.3699 ]
 
 
 
@@ -464,22 +468,22 @@ if __name__ == '__main__':
 
         sf_cif = CifFile.ReadCif(str(cif))
 
-#        print_qmax(sf_cif, [0.3699, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6])
-#        print('\n\n')
+        print_qmax(sf_cif, [qmax, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6])
+# #        print('\n\n')
 
 
-        start =time.strftime('%H:%M:%S, %A %d %B')
-        print(f'starting at {start}')
-        correl = full_correlate_threaded(sf_cif, nq,nt, qmax,nChunks=4)
-        end =time.strftime('%H:%M:%S, %A %d %B')
-        print(f'ended at {end}')
+        # start =time.strftime('%H:%M:%S, %A %d %B')
+        # print(f'starting at {start}')
+        # correl = full_correlate_threaded(sf_cif, nq,nt, qmax,nChunks=4)
+        # end =time.strftime('%H:%M:%S, %A %d %B')
+        # print(f'ended at {end}')
 
 
-        dbin_fname = str(cif.stem+'_paper_qcorrel')
+        # dbin_fname = str(cif.stem+'_paper_qcorrel')
 
 
-        ppu.save_dbin(correl,dbin_fname)
+        # ppu.save_dbin(correl,dbin_fname)
 
-        log_fname=str(Path('dbins')/  f'{dbin_fname}_log.txt')
-        ppu.write_log(log_fname, cif=cif, nQ=nq, nTheta=nt, qmax=qmax, Start_Time=start,End_Time=end)
+        # log_fname=str(Path('dbins')/  f'{dbin_fname}_log.txt')
+        # ppu.write_log(log_fname, cif=cif, nQ=nq, nTheta=nt, qmax=qmax, Start_Time=start,End_Time=end)
 

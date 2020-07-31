@@ -1,8 +1,11 @@
 import numpy as np
 
 
+##multiplicty matrices
+# https://www.cryst.ehu.es/cryst/get_point_genpos.html
 
-#http://pmsl.planet.sci.kobe-u.ac.jp/~seto/?page_id=37&lang=en
+## space group/pointgroup list
+# http://pmsl.planet.sci.kobe-u.ac.jp/~seto/?page_id=37&lang=en
 HM_NUMBER_DICT = {
     'I 2 2 2': 123,
     'P 1': 1,
