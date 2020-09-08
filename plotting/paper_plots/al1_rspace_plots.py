@@ -116,7 +116,7 @@ for rmax, padf_fname in zip(rmaxs,padf_fnames):
 
 
 for lp_key in lps.keys():
-    plt.figure()
+    plt.figure(figsize=(8,5.5))
     plt.title(lp_key.upper()+' - Line Plots')
     for i, lp in enumerate(lps[lp_key]):
         plt.plot(lp, label=f'$r=${lp_dists[i]} \u00c5')
@@ -124,11 +124,9 @@ for lp_key in lps.keys():
     plt.xlabel('$\\theta$ / $ ^{\circ}$')
     plt.ylabel('PADF Intensity')
     plt.legend(loc='upper right')
+    plt.savefig(f'{lp_key}_lp.png')
 
-# plt.figure()
-# for lp in lps2:
-    # plt.title('Line plots')
-    # plt.plot(lp)
+
 
 
 

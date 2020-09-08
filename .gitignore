@@ -1,6 +1,6 @@
-/cifs/
-/raw_pdb/
-/__pycache__/
+/cifs/*
+/raw_pdb/*
+/__pycache__/*
 /.idea/
 /dbins/
 /padf_ln/

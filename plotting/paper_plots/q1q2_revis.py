@@ -7,8 +7,8 @@ import numpy as np
 
 import matplotlib.pylab as pylab
 print(pylab.rcParams.keys())
-params = { 'axes.labelsize':16,
-         'axes.titlesize':16,
+params = { 'axes.labelsize':18,
+         'axes.titlesize':20,
         'figure.titlesize':20,
           'xtick.labelsize':14,
          'ytick.labelsize':14}
@@ -105,7 +105,7 @@ for dbin_fname, qmax in zip(dbin_fnames, qmaxs):
 
 
     # plt.colorbar()
-    # plt.savefig(f'{dbin_fname[:4]}_q1q2_rv' )
+    plt.savefig(f'{dbin_fname[:4]}_q1q2_rv' )
 
 
 #    plt.plot(t_space, 3.5175*t_space**(-1.038291), 'r,')

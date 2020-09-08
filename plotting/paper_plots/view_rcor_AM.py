@@ -108,6 +108,7 @@ class displayPADF():
         
         #thmax = s[1]//2
         ppu.plot_map(datafilt[self.rmin:self.rmax,:self.thmax],title=self.title,fig_size=self.fig_size,dpi=self.dpi, cb=False, cmap='viridis', xlabel='$\\theta$ / $ ^{\circ}$', ylabel='$r_1=r_2$ / $\AA$', origin="lower", extent=[0,180,r0,r1])
+        # plt.title('OLD POINTS')
         #plt.imshow(datafilt[self.rmin:self.rmax,:self.thmax], origin="lower", extent=[0,180,r0,r1], aspect=9)
 
         cols = plt.cm.autumn(np.linspace(0,0.9, len(self.arc_dists)))
@@ -126,19 +127,23 @@ class displayPADF():
 
         for x,y in zip(self.xpnt,self.ypnt):
             plt.plot(x, y,'o',  ms=6, markeredgewidth=1.5, markerfacecolor=(0.8,0.8,0.8,1), markeredgecolor=(0,0,0,1))
+            plt.plot(180-x, y,'o',  ms=6, markeredgewidth=1, markerfacecolor=(0.8,0.8,0.8,0), markeredgecolor=(0,0,0,1))
+
         
-        plt.plot(65, 10, 'r.', ms=7)#, color=(229/255,104/255,0,1))
+        plt.plot(60, 10.2,'o',  ms=6, markeredgewidth=1.5, markerfacecolor=(1,0,0,1), markeredgecolor=(0,0,0,1))
+        plt.plot(180-60, 10.2,'o',  ms=6, markeredgewidth=1, markerfacecolor=(0.8,0.8,0.8,0), markeredgecolor=(0,0,0,1))
+        
         
 
         plt.xlim(0, 180)
-        plt.ylim(self.rmin*self.res, 20)
+        plt.ylim(self.rmin*self.res, 13)
         if self.leg_flag:
-            l= plt.legend( framealpha=0, markerfirst=False,ncol=2,loc='upper center')
+            l= plt.legend( framealpha=1, markerfirst=False,ncol=2,loc='upper center')
         else:
 
-            l= plt.legend( framealpha=0, markerfirst=False)
+            l= plt.legend( framealpha=1, markerfirst=False)
         for text in l.get_texts():
-            text.set_color('white')
+            text.set_color('black')
  
         plt.draw()
 
@@ -149,25 +154,35 @@ class displayPADF():
 
 
 
-#arc_dists = [1.2, 1.3,1.5,2.5,6, 11]
-#arc_dists = [ 1.3,2.2,6.2,8.5,11, 14]
 arc_dists = [11,6.2,2.2,1.3]
+arc_dists = [5,2.2,1.3]
 # Jack's 1al1 model
-fname = "1al1_ex_rcor2.dat"
-
-#xpnt = [65,65, 72, 65, 90, 90, 27, 45, 90, 23, 50, 90, 90, 75, 55, 80]
-#ypnt = [8,10, 11.8, 5.8, 4.5, 6.8, 5, 9, 9, 7, 7, 15, 13, 13.5, 12, 10.75]
+fname = "1al1_ex_rcor3.dat"
 
 
-xpnt = [65,65, 72, 65, 90, 90, 27, 45, 90, 19, 53, 90, 90, 78, 55, 80, 64.2]
-ypnt = [8,10, 11.8, 5.8, 4.1, 7.1, 5, 9, 9, 7, 7, 15, 13, 14.2, 12, 10.75,13.3]
+
+# xpnt = [65,65, 72, 65, 90, 90, 27, 45, 90, 19, 53, 90, 90, 78, 55, 80, 64.2]
+# ypnt = [8,10, 11.8, 5.8, 4.1, 7.1, 5, 9, 9, 7, 7, 15, 13, 14.2, 12, 10.75,13.3]
+
+# xpnt = [65,65, 65, 90, 90, 27, 45, 90, 19, 53, 55]
+# ypnt = [8,10, 5.8, 4.1, 7.1, 5, 9, 9, 7, 7, 12]
+
+
+
+# xpnt = [60,60, 60, 90, 90, 34, 45, 90, 19, 60, 55, 22.9]
+# ypnt = [8.1,10.2, 5.6, 4.2, 7.1, 3.9, 9, 9, 7.2, 7.1, 12 ,8.8] 
+
+xpnt = [60,60, 60, 90, 90, 32, 45, 90, 19, 53, 55, 22.9]
+ypnt = [8,10.2, 5.7, 4.4, 7.1, 3.8, 9, 9, 7.2, 7, 12, 9.1]
+
+
 fig_size = (8,5.5)
 dpi=150
 
 al_ex = displayPADF(gbf=True,abf=False,rbf=False,tf=True,rf=False,
                      # fname=fname,wid=15,widr=20,w=3,maxrad=20,
                      fname=fname,wid=30,widr=40,w=5,maxrad=20,
-                     rmax=201,rmin=30,thmax=89,cmin=-2.5,cmax=15,leg_flag=True,
+                     rmax=130,rmin=30,thmax=89,cmin=-2.5,cmax=6,leg_flag=False,
                      xp=xpnt,yp=ypnt, arc_dists=arc_dists,dpi=dpi, fig_size=fig_size, save_fname='1al1_j_blur.png')
 al_ex.loadAndPlot()
 
@@ -176,19 +191,20 @@ fname = "1al1_padf_r1r2.dat"
 
 al = displayPADF(gbf=False,res=0.2, abf=False,rbf=False,tf=False,rf=False,
                      fname=fname,wid=15,widr=20,w=4,maxrad=60,
-                     rmax=100,rmin=15,thmax=180,cmin=-1e72,cmax=1e73,
+                     rmax=65,rmin=15,thmax=180,cmin=-1e72,cmax=1e73,
                      xp=xpnt,yp=ypnt, arc_dists=arc_dists, dpi=dpi, fig_size=fig_size, save_fname='1al1_p_padf.png')
 al.loadAndPlot()
 
 #### Jack's 1al1 model
-fname = "1al1_ex_rcor2.dat"
+fname = "1al1_ex_rcor3.dat"
 
 
 al_ex2 = displayPADF(gbf=True,abf=False,rbf=False,tf=True,rf=True,
                      fname=fname,wid=15,widr=20,w=0.25,maxrad=20,
-                     rmax=201,rmin=30,thmax=89,cmin=-1e-7,cmax=1e-7,
+                     rmax=130,rmin=30,thmax=89,cmin=-1e-7,cmax=1e-7,
                      xp=xpnt,yp=ypnt, arc_dists=arc_dists,dpi=dpi, fig_size=fig_size,save_fname='1al1_j_norm.png')
 
 al_ex2.loadAndPlot()
 
 plt.show()
+
